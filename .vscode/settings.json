@@ -1,0 +1,15 @@
+{
+    "files.associations": {
+        "*.xml": "html",
+        "bitset": "cpp",
+        "vector": "cpp",
+        "iosfwd": "cpp",
+        "istream": "cpp",
+        "optional": "cpp",
+        "ostream": "cpp",
+        "streambuf": "cpp",
+        "functional": "cpp",
+        "regex": "cpp",
+        "tuple": "cpp"
+    }
+}
