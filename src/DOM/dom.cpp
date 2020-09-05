@@ -1,18 +1,21 @@
 #include "Engine/DOM.hpp"
+#include <iostream>
 #include <string>
 #include <memory>
 #include <vector>
 #include <map>
 #include <algorithm>
 
+
 using namespace Engine::DOM;
 
 Element::Element()
 : children(),
-attributes(),
+// attributes(),
 id(""),
 classList()
 {
+    setTagName("element");
 }
 
 Element::~Element()
@@ -42,7 +45,16 @@ void Element::appendChild(std::shared_ptr<Element> child)
 
 void Element::removeChild(std::shared_ptr<Element> child)
 {
-    children.remove(child);
+    //children.remove(child);
+    for (size_t i = 0; i < children.size(); i++)
+    {
+        if (children[i] == child)
+        {
+            children.erase(children.begin() + i);
+            break;
+        }
+    }
+    
     child->setParent(nullptr);
 }
 
@@ -59,7 +71,7 @@ bool Element::hasChild(std::shared_ptr<Element> child)
     }
 }
 
-std::list<std::shared_ptr<Element>> Element::getChildren()
+std::vector<std::shared_ptr<Element>> Element::getChildren()
 {
     return children;
 }
@@ -85,4 +97,138 @@ bool Element::hasParent()
     {
         return true;
     }
+}
+
+std::string Element::getId()
+{
+    return id;
+}
+
+void Element::setId(std::string new_id)
+{
+    id = new_id;
+}
+
+// ==============================================
+// Selectors
+
+std::shared_ptr<Element> Element::getElementById(std::string id)
+{
+    for (size_t i = 0; i < children.size(); i++)
+    {
+        if (children[i]->getId() == id)
+        {
+            return children[i];
+        }
+        else {
+            auto res = children[i]->getElementById(id);
+            if (res != nullptr)
+            {
+                return res;
+            }
+        }
+    }
+
+    return nullptr;
+}
+
+std::vector<std::shared_ptr<Element>> Element::getElementsByTagName(std::string tag)
+{
+    std::vector<std::shared_ptr<Element>> output;
+
+    for (size_t i = 0; i < children.size(); i++)
+    {
+        if (children[i]->getTagName() == tag)
+        {
+            output.push_back(children[i]);
+        }
+
+        auto more = children[i]->getElementsByTagName(tag);
+        if (more.size() > 0)
+        {
+            output.insert(output.end(), more.begin(), more.end());
+        }
+    }
+
+    return output;
+}
+
+// =======================================================
+// Attributes
+
+void Element::setAttribute(std::string attribute, AttrVariant value)
+{
+    attributes[attribute] = value;
+}
+
+AttrVariant Element::getAttribute(std::string attribute)
+{
+    return attributes.at(attribute);
+}
+
+bool Element::hasAttribute(std::string attribute)
+{
+    try
+    {
+        attributes.at(attribute);
+        return true;
+    }
+    catch(const std::exception& e)
+    {
+        return false;
+    }
+    
+}
+
+// =======================================================
+// ClassList
+
+ClassList::ClassList()
+: classes()
+{
+
+}
+
+ClassList::~ClassList()
+{
+
+}
+
+void ClassList::add(std::string element_class)
+{
+    if (!has(element_class))
+    {
+        classes.push_back(element_class);
+    }
+}
+
+void ClassList::remove(std::string element_class)
+{
+    if (!has(element_class))
+    {
+        std::cerr << "Cannot remove class " << element_class << ": Element does not contain this class" << std::endl;
+        return;
+    }
+
+    for (size_t i = 0; i < classes.size(); i++)
+    {
+        if (classes[i] == element_class)
+        {
+            classes.erase(classes.begin() + i);
+            break;
+        }
+    }
+}
+
+bool ClassList::has(std::string element_class)
+{
+    for (size_t i = 0; i < classes.size(); i++)
+    {
+        if (classes[i] == element_class)
+        {
+            return true;
+        }
+    }
+
+    return false;
 }

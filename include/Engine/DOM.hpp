@@ -1,11 +1,13 @@
 #ifndef ENGINE_DOM_H
 #define ENGINE_DOM_H
 
+#include <iostream>
 #include <string>
 #include <memory>
 #include <vector>
 #include <list>
 #include <map>
+#include <variant>
 
 namespace Engine
 {
@@ -16,23 +18,20 @@ namespace Engine
         private:
             std::vector<std::string> classes;
         public:
-            // TODO: implement this
-            ClassList() {};
-            ~ClassList() {};
+            ClassList();
+            ~ClassList();
 
             void add(std::string element_class);
             void remove(std::string element_class);
-            void replace(std::string element_class);
-            void has(std::string element_class);
+            bool has(std::string element_class);
         };
 
-
+        typedef std::variant<uint, int, float, std::string> AttrVariant;
         class Element
         {
         private:
-            std::list<std::shared_ptr<Element>> children;
-            std::map<std::string, std::shared_ptr<void>> attributes;
-            std::string id; // Id will also be an attribute, but we put it here for easy access
+            std::vector<std::shared_ptr<Element>> children;
+            std::map<std::string, AttrVariant> attributes;
 
             std::shared_ptr<Element> parent;
 
@@ -53,7 +52,7 @@ namespace Engine
             std::vector<std::shared_ptr<Element>> getElementsByClassName(std::string clas);
 
             // Returns this element's children
-            std::list<std::shared_ptr<Element>> getChildren();
+            std::vector<std::shared_ptr<Element>> getChildren();
 
             // Add a child to this element. This will remove them from their previous parent
             void appendChild(std::shared_ptr<Element> child);
@@ -78,13 +77,18 @@ namespace Engine
 
             std::string getId();
             void setId(std::string id);
-
-            std::shared_ptr<void> getAttribute(std::string name);
-            bool hasAttribute(std::string name);
-            void setAttribute(std::string name, std::shared_ptr<void> data);
             
             // The main loop. This function will be called every frame
             virtual void process(float delta) {};
+
+            // Sets one of the element's attributes
+            void setAttribute(std::string attribute, AttrVariant value);
+
+            // Gets an attribute from the element. Returns something if failed
+            AttrVariant getAttribute(std::string attribute);
+
+            // Returns true is that attribute exists, otherwise false
+            bool hasAttribute(std::string attribute);
 
             // Object containing which this element's classes
             ClassList classList;
@@ -94,7 +98,13 @@ namespace Engine
 
         protected:
             // Set this first thing
-            const std::string tag_name = "element";
+            std::string tag_name = "element";
+            std::string id; // Id will also be an attribute, but we put it here for easy access
+
+            void setTagName(std::string tag)
+            {
+                tag_name = tag;
+            }
         };
     } // namespace DOM
 
