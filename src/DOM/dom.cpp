@@ -1,4 +1,5 @@
-#include "Engine/DOM.hpp"
+// #include "Engine/DOM.hpp"
+#include "Engine/Engine.hpp"
 #include <iostream>
 #include <string>
 #include <memory>
@@ -9,10 +10,11 @@
 
 using namespace Engine::DOM;
 
-Element::Element()
+Element::Element(std::shared_ptr<Engine::Document> parent_document)
 : children(),
 // attributes(),
 id(""),
+document(parent_document),
 classList()
 {
     setTagName("element");
@@ -36,7 +38,7 @@ void Element::appendChild(std::shared_ptr<Element> child)
         child->getParent()->removeChild(child);
     }
 
-    child->setParent(self_ptr);
+    child->setParent(shared_from_this());
     children.push_back(child);
 
     // Plan: Have a "self" pointer that gets set when added to a parent
@@ -109,6 +111,17 @@ void Element::setId(std::string new_id)
     id = new_id;
 }
 
+void Element::destroy()
+{
+    for (size_t i = 0; i < children.size(); i++)
+    {
+        children[i]->destroy();
+    }
+
+    // This probably frees this element, but I'm not really sure
+    // self_ptr.reset();
+}
+
 // ==============================================
 // Selectors
 
@@ -151,6 +164,24 @@ std::vector<std::shared_ptr<Element>> Element::getElementsByTagName(std::string 
     }
 
     return output;
+}
+
+bool Element::contains(std::shared_ptr<Element> element)
+{
+    for (size_t i = 0; i < children.size(); i++)
+    {
+        if (children[i] == element)
+        {
+            return true;
+        }
+        
+        if (children[i]->contains(element))
+        {
+            return true;
+        }
+    }
+
+    return false;
 }
 
 // =======================================================
