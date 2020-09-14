@@ -8,7 +8,7 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 include(CTest)
 enable_testing()
 
-add_library(Engine OBJECT include/glad/glad.h lib/glad/src/glad.c include/Engine/Engine.hpp include/Engine/Renderer/Renderer.hpp include/Engine/Renderer/Amber.hpp src/engine.cpp src/DOM/dom.cpp src/threading.cpp src/renderer/Amber/amber.cpp)
+add_library(Engine OBJECT include/glad/glad.h lib/glad/src/glad.c include/Engine/Engine.hpp include/Engine/Renderer/Renderer.hpp include/Engine/Renderer/Amber.hpp src/res.cpp src/engine.cpp src/DOM/dom.cpp src/threading.cpp src/renderer/Amber/amber.cpp)
 
 target_include_directories(Engine PUBLIC include)
 include_directories(include)
@@ -29,6 +29,7 @@ target_link_libraries(Engine PRIVATE dl)
 
 
 function(make_test test_name source)
+    set (CMAKE_CXX_STANDARD 17)
     add_executable(${test_name} ${source} $<TARGET_OBJECTS:Engine>)
     add_test(NAME ${test_name} COMMAND ${test_name})
     find_package(Threads REQUIRED)
