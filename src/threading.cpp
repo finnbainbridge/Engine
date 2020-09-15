@@ -83,9 +83,15 @@ void Threading::addLesserTask(std::function<void()> function)
 void Threading::waitForCompletion()
 {
 #ifndef ENGINE_NO_THREADING
-    while (!(important_tasks.empty() && total_threads == free_threads))
+    bool end = false;
+    while (!(end))
     {
-        // Wait
+        tasks_lock.lock();
+        if (important_tasks.empty() && total_threads == free_threads)
+        {
+            end = true;
+        }
+        tasks_lock.unlock();
     }
 #endif
 }

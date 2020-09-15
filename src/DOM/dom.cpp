@@ -166,6 +166,25 @@ std::vector<std::shared_ptr<Element>> Element::getElementsByTagName(std::string 
     return output;
 }
 
+std::vector<std::shared_ptr<Element>> Element::getParentsByTagName(std::string tag)
+{
+    std::vector<std::shared_ptr<Element>> output;
+    
+    if (getParent() != nullptr)
+    {
+        if (getParent()->getTagName() == tag_name)
+        {
+            auto more = getParent()->getParentsByTagName(tag);
+            if (more.size() > 0)
+            {
+                output.insert(output.end(), more.begin(), more.end());
+            }
+        }
+    }
+
+    return output;
+}
+
 bool Element::contains(std::shared_ptr<Element> element)
 {
     for (size_t i = 0; i < children.size(); i++)

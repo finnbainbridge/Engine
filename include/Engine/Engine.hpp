@@ -90,6 +90,9 @@ namespace Engine
             // Find a vector of elements which are of the tag `tag`. This will only look through this element's children, and their children, etc
             std::vector<std::shared_ptr<Element>> getElementsByTagName(std::string tag);
 
+            // Finds parents of this element which are a certain tag
+            std::vector<std::shared_ptr<Element>> getParentsByTagName(std::string tag);
+
             // Find a vector of elements which have the class `class`. This will only look through this element's children, and their children, etc
             std::vector<std::shared_ptr<Element>> getElementsByClassName(std::string clas);
 
