@@ -8,7 +8,11 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 include(CTest)
 enable_testing()
 
-add_library(Engine OBJECT include/glad/glad.h lib/glad/src/glad.c include/Engine/Engine.hpp include/Engine/Renderer/Renderer.hpp include/Engine/Renderer/Amber.hpp src/res.cpp src/engine.cpp src/DOM/dom.cpp src/threading.cpp src/renderer/Amber/amber.cpp)
+add_library(Engine OBJECT include/glad/glad.h lib/glad/src/glad.c include/Engine/Engine.hpp include/Engine/Renderer/Renderer.hpp include/Engine/Renderer/Amber.hpp
+            include/Engine/Element3D.hpp
+             src/res.cpp src/engine.cpp src/DOM/dom.cpp src/threading.cpp src/renderer/Amber/amber.cpp
+             src/Element3D/element3d.cpp
+            )
 
 target_include_directories(Engine PUBLIC include)
 include_directories(include)

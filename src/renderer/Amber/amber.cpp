@@ -1,6 +1,8 @@
 #include "Engine/Engine.hpp"
 #include "Engine/Renderer/Renderer.hpp"
 #include "glm/fwd.hpp"
+#include "glm/gtc/type_ptr.hpp"
+#include "glm/matrix.hpp"
 #include <iostream>
 #include <memory>
 #include <string>
@@ -9,14 +11,21 @@
 #include "GLFW/glfw3.h"
 
 #include "Engine/Renderer/Amber.hpp"
+#include "Engine/Input.hpp"
 
 using namespace Engine::Renderer;
 
 GLFWwindow* Engine::Renderer::Amber::window = nullptr;
 
-Amber::Amber(std::shared_ptr<Document> doc): document(doc)
+int Amber::screen_height = 0;
+int Amber::screen_width = 0;
+
+Amber::Amber(std::shared_ptr<Document> doc): document(doc),
+offset(),
+old_position()
 {
     doc->renderer = std::shared_ptr<Amber>(this);
+    mouse_mode = Engine::Input::MouseMode::Free;
 }
 
 Amber::~Amber()
@@ -75,12 +84,16 @@ bool Amber::createWindow(int width, int height, std::string title)
     glViewport(0,0,width,height);
     glEnable(GL_DEPTH_TEST);
 
+    screen_width = width;
+    screen_height = height;
+
     return true;
 }
 
-void Amber::mainloop()
+void Amber::mainloop(std::function<void(float)> func)
 {
     last_frame_start = glfwGetTime();
+    render_func = func;
 
     while (!glfwWindowShouldClose(window))
     {
@@ -107,6 +120,59 @@ void Amber::loop()
     
     // Clear the screen
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+    // Deal with input stuff (mostly mouse)
+    if (mouse_mode == Engine::Input::MouseMode::Captured)
+    {
+        double x, y;
+        glfwGetCursorPos(window, &x, &y);
+        offset = glm::vec2(x,y);
+        x = screen_width/2;
+        y = screen_height/2;
+        glfwSetCursorPos(window, x, y);
+        old_position = glm::vec2(x,y);
+    }
+    else if (mouse_mode == Engine::Input::MouseMode::Confined)
+    {
+        double x, y;
+        glfwGetCursorPos(window, &x, &y);
+        offset = old_position - glm::vec2(x,y);
+        old_position = glm::vec2(x,y);
+        glm::vec2 new_position(x,y);
+
+        if (old_position.x < 10)
+        {
+            new_position.x = screen_width-11;
+        }
+        else if (old_position.x > screen_width-10)
+        {
+            new_position.x = 11;
+        }
+
+        if (old_position.y < 10)
+        {
+            new_position.y = screen_height-11;
+        }
+        else if (old_position.y > screen_height-10)
+        {
+            new_position.y = 11;
+        }
+
+        if (new_position != old_position)
+        {
+            glfwSetCursorPos(window, new_position.x, new_position.y);
+            old_position = new_position;
+        }
+    }
+    else {
+        double x, y;
+        glfwGetCursorPos(window, &x, &y);
+        offset = old_position - glm::vec2(x,y);
+        old_position = glm::vec2(x,y);
+    }
+
+    // Run our render function
+    render_func(delta);
 
     // Run the DOM to get everything to render
     document->tick(delta);
@@ -203,6 +269,38 @@ void AmberShaderProgram::use()
     }
 }
 
+GLint AmberShaderProgram::getUniformLocation(const std::string name) 
+{
+    std::map<std::string, GLint>::iterator it = uniform_locations.find(name);
+    if (it == uniform_locations.end())
+    {
+        uniform_locations[name] = glGetUniformLocation(handle, name.c_str());
+    }
+
+    return uniform_locations[name];
+}
+
+void AmberShaderProgram::setUniform(const std::string name, const glm::vec2& v)
+{
+    GLint loc = getUniformLocation(name);
+    glUniform2f(loc, v.x, v.y);
+}
+void AmberShaderProgram::setUniform(const std::string name, const glm::vec3& v)
+{
+    GLint loc = getUniformLocation(name);
+    glUniform3f(loc, v.x, v.y, v.z);
+}
+void AmberShaderProgram::setUniform(const std::string name, const glm::vec4& v)
+{
+    GLint loc = getUniformLocation(name);
+    glUniform4f(loc, v.x, v.y, v.z, v.w);
+}
+void AmberShaderProgram::setUniform(const std::string name, const glm::mat4& v)
+{
+    GLint loc = getUniformLocation(name);
+    glUniformMatrix4fv(loc, 1, GL_FALSE, glm::value_ptr(v));
+}
+
 void AmberShaderProgram::destroy()
 {
     std::cout << "Destroying shaders!" << std::endl;
@@ -274,9 +372,6 @@ void AmberRenderObject::setMeshData(std::vector<glm::vec3> position, std::vector
 
 void AmberRenderObject::draw()
 {
-    Amber::makeCurrent();
-    // std::cout << "Frame ===============" << std::endl;
-    shader_program->use();
     // std::cout << glGetError() << std::endl;
     glBindVertexArray(vao);
     // std::cout << glGetError() << std::endl;
@@ -300,9 +395,70 @@ std::shared_ptr<RenderObject> Amber::addRenderObject()
     return object;
 }
 
-void Amber::renderRenderObject(std::shared_ptr<RenderObject> model)
+void Amber::renderRenderObject(std::shared_ptr<RenderObject> model, glm::mat4 global_transform, glm::mat4 local_transform)
 {
+    Amber::makeCurrent();
+    model->shader_program->use();
+
+    if (!has_camera)
+    {
+        return;
+    }
+
+    // Set uniforms
+    // TODO: Do this in a more scalable way
+    
+    model->shader_program->setUniform("projection", glm::perspective((float)0.8726646, (float)1024/866, 0.1f, 100.0f));
+    model->shader_program->setUniform("view", camera->_getViewMatrix());
+    model->shader_program->setUniform("local_transform", local_transform);
+    model->shader_program->setUniform("global_transform", global_transform);
+
+
     model->draw();
+}
+
+void Amber::setCamera(std::shared_ptr<ICamera> cam)
+{
+    has_camera = true;
+    camera = cam;
+}
+
+bool Amber::isKeyPressed(int key)
+{
+    if (glfwGetKey(window, key) == GLFW_PRESS)
+    {
+        return true;
+    }
+    
+    return false;
+}
+
+bool Amber::isMouseButtonPressed(int button)
+{
+    if (glfwGetMouseButton(window, button) == GLFW_PRESS)
+    {
+        return true;
+    }
+    
+    return false;
+}
+
+// Mouse stuff
+void Amber::setCursorMode(Engine::Input::CursorMode mode)
+{
+    if (mode == Engine::Input::CursorMode::Hidden)
+    {
+        glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
+    }
+    else
+    {
+        glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+    }
+}
+
+void Amber::setMouseMode(Engine::Input::MouseMode mode)
+{
+    mouse_mode = mode;
 }
 
 void Amber::destroy()
@@ -322,7 +478,7 @@ void Amber::destroy()
 
 void onFrameBufferSizeChange(GLFWwindow* window, int iwidth, int iheight)
 {
-    // width = iwidth;
-    // height = iheight;
+    Amber::screen_width = iwidth;
+    Amber::screen_height = iheight;
     glViewport(0,0,iwidth,iheight);
 }

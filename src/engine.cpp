@@ -5,6 +5,7 @@
 
 
 Engine::Document::Document()
+:element_types()
 {
 
 #ifndef ENGINE_NO_THREADING

@@ -5,7 +5,10 @@
 
 // #include "Engine/Threading.hpp"
 // #include "Engine/Renderer/Renderer.hpp"
+#include <exception>
+#include <iostream>
 #include <memory>
+#include <stdexcept>
 #include <vector>
 
 #include <thread>
@@ -13,6 +16,8 @@
 #include <variant>
 #include <string>
 #include <map>
+
+#include "glm/fwd.hpp"
 
 
 namespace Engine
@@ -22,6 +27,76 @@ namespace Engine
     namespace Renderer {
         class IRenderer;
     }
+
+    namespace Types
+    {
+        class TypeContainer
+        {
+            private:
+                glm::uint64 storage [8] = {0,0,0,0,0,0,0,0};
+            public:
+                void setType(int new_type)
+                {
+                    if (new_type > 511)
+                    {
+                        std::cerr << "Error: Only 511 types are supported" << std::endl;
+                        return;
+                    }
+                    if (isType(new_type))
+                    {
+                        // Don't unset ourselves
+                        return;
+                    }
+                    int num = new_type/64;
+                    int bit = new_type % 64;
+
+                    storage[num] |= 1UL << bit;
+                }
+
+                bool isType(int new_type)
+                {
+                    if (new_type > 511)
+                    {
+                        std::cerr << "Error: Only 511 types are supported" << std::endl;
+                        return false;
+                    }
+
+                    int num = new_type/64;
+                    int bit = new_type % 64;
+
+                    int value = (storage[num] >> bit) & 1U;
+                    return value;
+                }
+        };
+
+        class ElementTypes
+        {
+            private:
+                int on;
+                std::map<std::string, int> types;
+            public:
+                ElementTypes()
+                {
+                    on = 0;
+                    types = std::map<std::string, int>();
+                }
+
+                int getTypeOfElement(std::string element)
+                {
+                    // Check if it exists
+                    if (types.find(element) == types.end()) {
+                        // We have to create a new type
+                        on ++;
+                        types[element] = on;
+                        return on;
+                    }
+                    else
+                    {
+                        return types[element];
+                    }
+                }
+        };
+    };
 
     namespace Threading
     {
@@ -67,7 +142,7 @@ namespace Engine
             void remove(std::string element_class);
             bool has(std::string element_class);
         };
-        class Element;
+
         typedef std::variant<uint, int, float, std::string> AttrVariant;
         class Element: public std::enable_shared_from_this<Element>
         {
@@ -88,10 +163,10 @@ namespace Engine
             std::shared_ptr<Element> getElementById(std::string id);
 
             // Find a vector of elements which are of the tag `tag`. This will only look through this element's children, and their children, etc
-            std::vector<std::shared_ptr<Element>> getElementsByTagName(std::string tag);
+            std::vector<std::shared_ptr<Element>> getElementsByTagName(std::string tag, bool derived = false);
 
             // Finds parents of this element which are a certain tag
-            std::vector<std::shared_ptr<Element>> getParentsByTagName(std::string tag);
+            std::vector<std::shared_ptr<Element>> getParentsByTagName(std::string tag, bool derived = false);
 
             // Find a vector of elements which have the class `class`. This will only look through this element's children, and their children, etc
             std::vector<std::shared_ptr<Element>> getElementsByClassName(std::string clas);
@@ -142,10 +217,10 @@ namespace Engine
             void destroy();
 
             // Sets the tag name
-            void setTagName(std::string tag)
-            {
-                tag_name = tag;
-            }
+            void setTagName(std::string tag);
+
+            // Object that stores this Element's type
+            Engine::Types::TypeContainer type_container;
 
             // Object containing which this element's classes
             ClassList classList;
@@ -179,6 +254,8 @@ namespace Engine
     public:
         Document();
         ~Document();
+
+        Types::ElementTypes element_types;
 
         std::shared_ptr<DOM::Element> head;
         std::shared_ptr<DOM::Element> body;

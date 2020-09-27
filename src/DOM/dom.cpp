@@ -122,6 +122,14 @@ void Element::destroy()
     // self_ptr.reset();
 }
 
+void Element::setTagName(std::string tag)
+{
+    tag_name = tag;
+
+    // Add it to the types database
+    type_container.setType(document->element_types.getTypeOfElement(tag_name));
+}
+
 // ==============================================
 // Selectors
 
@@ -145,18 +153,28 @@ std::shared_ptr<Element> Element::getElementById(std::string id)
     return nullptr;
 }
 
-std::vector<std::shared_ptr<Element>> Element::getElementsByTagName(std::string tag)
+std::vector<std::shared_ptr<Element>> Element::getElementsByTagName(std::string tag, bool derived)
 {
     std::vector<std::shared_ptr<Element>> output;
 
     for (size_t i = 0; i < children.size(); i++)
     {
-        if (children[i]->getTagName() == tag)
+        if (derived == false)
         {
-            output.push_back(children[i]);
+            if (children[i]->getTagName() == tag)
+            {
+                output.push_back(children[i]);
+            }
+        }
+        else
+        {
+            if (children[0]->type_container.isType(document->element_types.getTypeOfElement(tag)))
+            {
+                output.push_back(children[i]);
+            }
         }
 
-        auto more = children[i]->getElementsByTagName(tag);
+        auto more = children[i]->getElementsByTagName(tag, derived);
         if (more.size() > 0)
         {
             output.insert(output.end(), more.begin(), more.end());
@@ -166,18 +184,33 @@ std::vector<std::shared_ptr<Element>> Element::getElementsByTagName(std::string 
     return output;
 }
 
-std::vector<std::shared_ptr<Element>> Element::getParentsByTagName(std::string tag)
+std::vector<std::shared_ptr<Element>> Element::getParentsByTagName(std::string tag, bool derived)
 {
     std::vector<std::shared_ptr<Element>> output;
     
     if (getParent() != nullptr)
     {
-        if (getParent()->getTagName() == tag_name)
+        if (derived == false)
         {
-            auto more = getParent()->getParentsByTagName(tag);
-            if (more.size() > 0)
+            if (getParent()->getTagName() == tag_name)
             {
-                output.insert(output.end(), more.begin(), more.end());
+                output.push_back(getParent());
+                auto more = getParent()->getParentsByTagName(tag);
+                if (more.size() > 0)
+                {
+                    output.insert(output.end(), more.begin(), more.end());
+                }
+            }
+        }
+        else {
+            if (getParent()->type_container.isType(document->element_types.getTypeOfElement(tag)))
+            {
+                output.push_back(getParent());
+                auto more = getParent()->getParentsByTagName(tag);
+                if (more.size() > 0)
+                {
+                    output.insert(output.end(), more.begin(), more.end());
+                }
             }
         }
     }

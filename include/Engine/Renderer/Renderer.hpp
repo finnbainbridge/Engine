@@ -5,10 +5,13 @@
 // #include "Engine/DOM.hpp"
 #include "Engine/Res.hpp"
 #include "glm/fwd.hpp"
+#include <functional>
 #include <glm/glm.hpp>
 #include <iostream>
 #include <memory>
 #include <sstream>
+
+#include "Engine/Input.hpp"
 
 namespace Engine {
     namespace Renderer {
@@ -40,16 +43,21 @@ namespace Engine {
                 virtual void loadShaders(std::shared_ptr<ShaderResource> vert, std::shared_ptr<ShaderResource> frag) {}
                 virtual void destroy() {};
                 virtual void use() {};
+
+                virtual void setUniform(const std::string label, const glm::vec2& value) {};
+                virtual void setUniform(const std::string label, const glm::vec3& value) {};
+                virtual void setUniform(const std::string label, const glm::vec4& value) {};
+                virtual void setUniform(const std::string label, const glm::mat4& value) {};
         };
 
         class RenderObject
         {
-            protected:
-                std::shared_ptr<ShaderProgram> shader_program;
             public:
                 RenderObject(): shader_program(nullptr), global_transform(), local_transform(), vertex_data(), indicies() {};
                 glm::mat4 global_transform;
                 glm::mat4 local_transform;
+
+                std::shared_ptr<ShaderProgram> shader_program;
 
                 // This is the mesh data
                 // Format: Tightly packed float32
@@ -90,20 +98,38 @@ namespace Engine {
                 virtual void destroy() {};
         };
 
+        class ICamera
+        {
+            public:
+                virtual glm::mat4 _getViewMatrix() {return glm::mat4();};
+        };
+
         class IRenderer
         {
             public:
-                virtual void mainloop() {};
+                virtual void mainloop(std::function<void(float)> func) {};
                 virtual void getFps() {};
                 virtual bool createWindow(int width, int height, std::string title) {return true;};
 
                 virtual std::shared_ptr<ShaderProgram> addShaderProgram(std::shared_ptr<ShaderResource> vert, std::shared_ptr<ShaderResource> frag) {return nullptr;};
 
                 virtual std::shared_ptr<RenderObject> addRenderObject() {return nullptr;};
-                virtual void renderRenderObject(std::shared_ptr<RenderObject> model) {};
+                virtual void renderRenderObject(std::shared_ptr<RenderObject> model, glm::mat4 global_transform, glm::mat4 local_transform) {};
 
                 virtual void cleanup() {};
+
+                virtual void setCamera(std::shared_ptr<ICamera> cam) {};
+
+                virtual bool isKeyPressed(int key) {return false;};
+                virtual bool isMouseButtonPressed(int button) {return false;};
+
+                virtual glm::vec2 getMousePosition() {return glm::vec2();};
+                virtual glm::vec2 getMouseOffset() {return glm::vec2();};
+
+                virtual void setMouseMode(Engine::Input::MouseMode mode) {};
+                virtual void setCursorMode(Engine::Input::CursorMode mode) {};
         };
+
     }
 }
 
