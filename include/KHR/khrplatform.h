@@ -4,7 +4,6 @@
 /*
 ** Copyright (c) 2008-2018 The Khronos Group Inc.
 **
-**
 ** Permission is hereby granted, free of charge, to any person obtaining a
 ** copy of this software and/or associated documentation files (the
 ** "Materials"), to deal in the Materials without restriction, including

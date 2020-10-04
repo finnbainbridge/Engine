@@ -7,11 +7,16 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 include(CTest)
 enable_testing()
-
+# TODO: Clean up this
 add_library(Engine OBJECT include/glad/glad.h lib/glad/src/glad.c include/Engine/Engine.hpp include/Engine/Renderer/Renderer.hpp include/Engine/Renderer/Amber.hpp
-            include/Engine/Element3D.hpp
+            include/Engine/Element3D.hpp include/Engine/DevTools.hpp
+            include/Engine/NKAPI.hpp
+            # include/nuklear/nuklear.h
+            include/Engine/Log.hpp
+            src/DevTools/log.cpp
              src/res.cpp src/engine.cpp src/DOM/dom.cpp src/threading.cpp src/renderer/Amber/amber.cpp
-             src/Element3D/element3d.cpp
+             src/Element3D/element3d.cpp src/DevTools/orbitcam.cpp
+             src/DevTools/devtoolsui.cpp
             )
 
 target_include_directories(Engine PUBLIC include)
@@ -19,6 +24,9 @@ include_directories(include)
 
 find_package(Threads REQUIRED)
 target_link_libraries(Engine PRIVATE Threads::Threads)
+
+set_target_properties(Engine PROPERTIES VERSION ${PROJECT_VERSION})
+
 
 # GLFW
 set(GLFW_BUILD_DOCS OFF CACHE BOOL "" FORCE)
@@ -30,6 +38,11 @@ add_subdirectory(lib/glfw)
 target_link_libraries(Engine PRIVATE glfw)
 target_link_libraries(Engine PRIVATE GL)
 target_link_libraries(Engine PRIVATE dl)
+
+SET(CMAKE_CXX_FLAGS_DEBUG_INIT "-g")
+
+# Nuklear
+set_source_files_properties(include/nuklear/nuklear_glfw_gl3.h PROPERTIES COMPILE_FLAGS -fpermissive)
 
 
 function(make_test test_name source)

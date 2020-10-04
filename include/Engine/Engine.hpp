@@ -18,6 +18,7 @@
 #include <map>
 
 #include "glm/fwd.hpp"
+#include "Engine/Log.hpp"
 
 
 namespace Engine
@@ -26,6 +27,11 @@ namespace Engine
 
     namespace Renderer {
         class IRenderer;
+    }
+
+    namespace DevTools
+    {
+        class DevTools;
     }
 
     namespace Types
@@ -39,7 +45,7 @@ namespace Engine
                 {
                     if (new_type > 511)
                     {
-                        std::cerr << "Error: Only 511 types are supported" << std::endl;
+                        LOG_ERROR("Error: Only 511 types are supported");
                         return;
                     }
                     if (isType(new_type))
@@ -57,7 +63,7 @@ namespace Engine
                 {
                     if (new_type > 511)
                     {
-                        std::cerr << "Error: Only 511 types are supported" << std::endl;
+                        LOG_ERROR("Error: Only 511 types are supported");
                         return false;
                     }
 
@@ -152,6 +158,9 @@ namespace Engine
 
             std::shared_ptr<Element> parent;
 
+            bool visible = true;
+            bool do_process = true;
+
         public:
             Element(std::shared_ptr<Document> parent_document);
             ~Element();
@@ -197,12 +206,40 @@ namespace Engine
 
             std::string getId();
             void setId(std::string id);
+
+            // This function is called the first frame after a node is added
+            virtual void init() {};
+            bool inited = false;
             
             // The main loop. This function will be called every frame. This function will be called in it's own thread
             virtual void process(float delta) {};
 
             // The _other_ main loop. This function will be called syncrinously. Mostly intended for rendering
             virtual void render(float delta) {};
+
+            // Sets the visibility of this element. If it's invisible, the render function of this element and it's children will not be called
+            void setVisible(bool new_vis)
+            {
+                visible = new_vis;
+            }
+
+            // Gets this element's visibility
+            bool getVisible() const
+            {
+                return visible;
+            }
+
+            // Sets the processability of this element. If it's inprocessable, the process function of this element and it's children will not be called
+            void setProcess(bool new_proc)
+            {
+                do_process = new_proc;
+            }
+
+            // Gets this element's processability
+            bool getProcess() const
+            {
+                return do_process;
+            }
 
             // Sets one of the element's attributes
             void setAttribute(std::string attribute, AttrVariant value);
@@ -259,6 +296,7 @@ namespace Engine
 
         std::shared_ptr<DOM::Element> head;
         std::shared_ptr<DOM::Element> body;
+        std::shared_ptr<DevTools::DevTools> devtools;
 
         void setup();
 

@@ -1,6 +1,7 @@
 #include "Engine/Engine.hpp"
 // #include "Engine/DOM.hpp"
 // #include "Engine/Threading.hpp"
+#include "Engine/DevTools.hpp"
 #include <memory>
 
 
@@ -34,6 +35,14 @@ void Engine::Document::setup()
     body = std::shared_ptr<DOM::Element>(new DOM::Element(shared_from_this()));
     body->setTagName("body");
     base->appendChild(body);
+
+    devtools = std::shared_ptr<DevTools::DevTools>(new DevTools::DevTools(shared_from_this()));
+    base->appendChild(devtools);
+
+    auto devtoolstree = std::make_shared<Engine::DevTools::DevToolsTree>(shared_from_this());
+    devtools->appendChild(devtoolstree);
+
+    devtools->setVisible(false);
 }
 
 void Engine::Document::tick(float delta)
@@ -46,6 +55,17 @@ void Engine::Document::tick(float delta)
 
 void Engine::Document::renderElement(float delta, std::shared_ptr<DOM::Element> element)
 {
+    if (element->inited == false)
+    {
+        element->init();
+        element->inited = true;
+    }
+
+    if (element->getVisible() == false)
+    {
+        return;
+    }
+
     element->render(delta);
 
     for (size_t i = 0; i < element->getChildren().size(); i++) {
@@ -57,7 +77,15 @@ void Engine::Document::renderElement(float delta, std::shared_ptr<DOM::Element> 
 void Engine::Document::executeElement(float delta, std::shared_ptr<DOM::Element> element)
 {
 
-    Engine::Threading::addTask(std::bind(&Engine::DOM::Element::process, element, delta));
+    if (element->getProcess() == false)
+    {
+        return;
+    }
+    
+    if (element->inited != false)
+    {
+        Engine::Threading::addTask(std::bind(&Engine::DOM::Element::process, element, delta));
+    }
     //element->process(delta);
     //element->render(delta);
 

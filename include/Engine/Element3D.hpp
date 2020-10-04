@@ -45,7 +45,7 @@ namespace Engine
         class Element3D: public DOM::Element
         {
             private:
-                void callChildUpdate();
+                
 
             protected:
                 glm::mat4 transform;
@@ -67,11 +67,18 @@ namespace Engine
                 // Rotates this Element3D and all its children by _angle_ (in radians) along _axis_
                 void rotate(float angle, glm::vec3 axis);
 
+                // Rotates this Element 3D and all it's children on the given *global* axis
+                void rotateGlobal(float angle, glm::vec3 axis);
+
                 // Translates this Element3D and all its children by the given offset
                 void translate(glm::vec3 offset);
 
                 // Scales this Element3D and all it's children by the given scaler for each axis
                 void scale(glm::vec3 scaler);
+
+                // This tells all this element's children to update their positions. This should be called after 
+                // you modify the transformation matricies yourself
+                void callChildUpdate();
         };
 
 

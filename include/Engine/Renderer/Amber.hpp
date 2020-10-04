@@ -11,6 +11,7 @@
 #include "glm/fwd.hpp"
 #include <glm/glm.hpp>
 
+
 namespace Engine {
 
     namespace Renderer {
@@ -25,6 +26,7 @@ namespace Engine {
                 GLint getUniformLocation(const std::string name);
 
                 std::map<std::string, GLint> uniform_locations;
+
             public:
                 AmberShaderProgram() : handle(0) {};
                 virtual void loadShaders(std::shared_ptr<ShaderResource> vert, std::shared_ptr<ShaderResource> frag);
@@ -86,6 +88,8 @@ namespace Engine {
 
                 virtual void mainloop(std::function<void(float)> func);
 
+                virtual double getTime();
+
                 virtual std::shared_ptr<ShaderProgram> addShaderProgram(std::shared_ptr<ShaderResource> vert, std::shared_ptr<ShaderResource> frag);
 
                 virtual std::shared_ptr<RenderObject> addRenderObject();
@@ -94,16 +98,23 @@ namespace Engine {
                 virtual void destroy();
 
                 virtual void setCamera(std::shared_ptr<ICamera> cam);
+                virtual std::shared_ptr<ICamera> getCamera();
 
                 virtual bool isKeyPressed(int key);
 
                 virtual bool isMouseButtonPressed(int button);
 
                 virtual glm::vec2 getMousePosition() {return glm::vec2();};
-                virtual glm::vec2 getMouseOffset() {return glm::vec2();};
+                virtual glm::vec2 getMouseOffset();
+
+                virtual float getScrollWheelOffset();
+                static float _scroll_offset;
 
                 virtual void setMouseMode(Engine::Input::MouseMode mode);
                 virtual void setCursorMode(Engine::Input::CursorMode mode);
+
+                virtual int getHeight() {return screen_height;};
+                virtual int getWidth() {return screen_width;};
 
                 static void makeCurrent()
                 {

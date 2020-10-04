@@ -4,6 +4,7 @@
 #include "glm/ext/matrix_transform.hpp"
 #include "glm/fwd.hpp"
 #include "glm/gtc/matrix_transform.hpp"
+#include "glm/matrix.hpp"
 #include <glm/gtc/type_ptr.hpp>
 #include <memory>
 
@@ -46,6 +47,13 @@ void Element3D::rotate(float angle, glm::vec3 axis)
     transform = glm::rotate(transform, angle, axis);
     transform_lock.unlock();
     callChildUpdate();
+}
+
+void Element3D::rotateGlobal(float angle, glm::vec3 axis)
+{
+    transform_lock.lock();
+    transform = glm::rotate(transform, angle, glm::vec3(glm::inverse(transform) * glm::vec4(axis, 0)));
+    transform_lock.unlock();
 }
 
 void Element3D::translate(glm::vec3 offset)

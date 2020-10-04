@@ -111,6 +111,8 @@ namespace Engine {
                 virtual void getFps() {};
                 virtual bool createWindow(int width, int height, std::string title) {return true;};
 
+                virtual double getTime() {return 0;}
+
                 virtual std::shared_ptr<ShaderProgram> addShaderProgram(std::shared_ptr<ShaderResource> vert, std::shared_ptr<ShaderResource> frag) {return nullptr;};
 
                 virtual std::shared_ptr<RenderObject> addRenderObject() {return nullptr;};
@@ -119,6 +121,7 @@ namespace Engine {
                 virtual void cleanup() {};
 
                 virtual void setCamera(std::shared_ptr<ICamera> cam) {};
+                virtual std::shared_ptr<ICamera> getCamera() {return nullptr;};
 
                 virtual bool isKeyPressed(int key) {return false;};
                 virtual bool isMouseButtonPressed(int button) {return false;};
@@ -126,8 +129,13 @@ namespace Engine {
                 virtual glm::vec2 getMousePosition() {return glm::vec2();};
                 virtual glm::vec2 getMouseOffset() {return glm::vec2();};
 
+                virtual float getScrollWheelOffset() {return 0.0f;};
+
                 virtual void setMouseMode(Engine::Input::MouseMode mode) {};
                 virtual void setCursorMode(Engine::Input::CursorMode mode) {};
+
+                virtual int getHeight() {return 0;};
+                virtual int getWidth() {return 0;};
         };
 
     }

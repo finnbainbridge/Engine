@@ -1,6 +1,7 @@
 #ifndef ENGINE_RES_H
 #define ENGINE_RES_H
 
+#include "Engine/Engine.hpp"
 #include <algorithm>
 #include <exception>
 #include <fstream>
@@ -54,7 +55,7 @@ namespace Engine {
 
                     // if (force_new || ptr == nullptr)
                     // {
-                        std::cout << getDirname() + "/" + filename << std::endl;
+                        LOG_INFO("Loaded file: " + getDirname() + "/" + filename);
                         auto ptr = std::make_shared<res_t>();
                         if (file_type == FileType::text)
                         {

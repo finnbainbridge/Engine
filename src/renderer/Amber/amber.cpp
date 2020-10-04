@@ -1,24 +1,53 @@
 #include "Engine/Engine.hpp"
+// #include "Engine/NKAPI.hpp"
+// #include "Engine/Log.hpp"
+#include "Engine/Log.hpp"
 #include "Engine/Renderer/Renderer.hpp"
 #include "glm/fwd.hpp"
 #include "glm/gtc/type_ptr.hpp"
 #include "glm/matrix.hpp"
+#include <cstddef>
+#include <exception>
 #include <iostream>
 #include <memory>
 #include <string>
 #include <glad/glad.h>
+
+
 #define GLFW_INCLUDE_ES3
 #include "GLFW/glfw3.h"
 
+#define NK_INCLUDE_FIXED_TYPES
+#define NK_INCLUDE_STANDARD_IO
+#define NK_INCLUDE_STANDARD_VARARGS
+#define NK_INCLUDE_DEFAULT_ALLOCATOR
+#define NK_INCLUDE_VERTEX_BUFFER_OUTPUT
+#define NK_INCLUDE_FONT_BAKING
+#define NK_INCLUDE_DEFAULT_FONT
+#define NK_IMPLEMENTATION
+#define NK_KEYSTATE_BASED_INPUT
+#define NK_GLFW_GL3_IMPLEMENTATION
+#include "Engine/NKAPI.hpp"
+
 #include "Engine/Renderer/Amber.hpp"
 #include "Engine/Input.hpp"
+#include "nuklear/nuklear_glfw_gl3.h"
+
 
 using namespace Engine::Renderer;
+using namespace Engine::NKAPI;
 
 GLFWwindow* Engine::Renderer::Amber::window = nullptr;
 
 int Amber::screen_height = 0;
 int Amber::screen_width = 0;
+
+float Amber::_scroll_offset = 0;
+
+// Nuklear instance
+struct nk_glfw glfw = {0};
+#define MAX_VERTEX_BUFFER 512 * 1024
+#define MAX_ELEMENT_BUFFER 128 * 1024
 
 Amber::Amber(std::shared_ptr<Document> doc): document(doc),
 offset(),
@@ -35,14 +64,15 @@ Amber::~Amber()
 }
 
 void onFrameBufferSizeChange(GLFWwindow* window, int iwidth, int iheight);
+void onScroll(GLFWwindow* window, double xoffset, double yoffset);
 
 bool Amber::createWindow(int width, int height, std::string title)
 {
-    std::cout << "Amber Renderer v0.0.1" << std::endl;
+    LOG_SUCCESS("Amber Renderer v0.0.1");
 
     if (!glfwInit())
     {
-        std::cerr << "Failed. Could not start GLFW." << std::endl;
+        LOG_ERROR("Failed. Could not start GLFW.");
         return false;
     }
 
@@ -57,7 +87,7 @@ bool Amber::createWindow(int width, int height, std::string title)
 
     if (window == nullptr)
     {
-        std::cerr << "Failed. Could not create window." << std::endl;
+        LOG_ERROR("Failed. Could not create window.");
         glfwTerminate();
         return false;
     }
@@ -66,23 +96,44 @@ bool Amber::createWindow(int width, int height, std::string title)
 
     glfwSetFramebufferSizeCallback(window, onFrameBufferSizeChange);
 
+    glfwSetScrollCallback(window, onScroll);
+
     // 1 for V-sync
     glfwSwapInterval(0);
 
     if(!gladLoadGLES2Loader((GLADloadproc)glfwGetProcAddress))
     {
-        std::cerr << "Failed. Could not start OpenGL" << std::endl;
+        LOG_ERROR("Failed. Could not start OpenGL");
         glfwTerminate();
         return false;
     }
 
-    std::cout << "OpenGL ES " << GLVersion.major << "." << GLVersion.minor << " on " << glGetString(GL_VENDOR) << " " << glGetString(GL_RENDERER) << std::endl;
+    LOG_SUCCESS("OpenGL ES " + std::to_string(GLVersion.major) + "." + std::to_string(GLVersion.minor) + " on " + (char*)glGetString(GL_VENDOR) + " " + (char*)glGetString(GL_RENDERER));
 
     glClearColor(0.23f, 0.38f, 0.47f, 1.0f);
     
 
     glViewport(0,0,width,height);
     glEnable(GL_DEPTH_TEST);
+
+    // Create nuklear
+    NKAPI::ctx = nk_glfw3_init(&glfw, window, NK_GLFW3_DEFAULT);
+
+    glfwSetCharCallback(window, nk_glfw3_char_callback);
+    glfwSetMouseButtonCallback(window, nk_glfw3_mouse_button_callback);
+
+    // Create fonts
+    {struct nk_font_atlas *atlas;
+    nk_glfw3_font_stash_begin(&glfw, &atlas);
+    /*struct nk_font *droid = nk_font_atlas_add_from_file(atlas, "../../../extra_font/DroidSans.ttf", 14, 0);*/
+    /*struct nk_font *roboto = nk_font_atlas_add_from_file(atlas, "../../../extra_font/Roboto-Regular.ttf", 14, 0);*/
+    /*struct nk_font *future = nk_font_atlas_add_from_file(atlas, "../../../extra_font/kenvector_future_thin.ttf", 13, 0);*/
+    /*struct nk_font *clean = nk_font_atlas_add_from_file(atlas, "../../../extra_font/ProggyClean.ttf", 12, 0);*/
+    /*struct nk_font *tiny = nk_font_atlas_add_from_file(atlas, "../../../extra_font/ProggyTiny.ttf", 10, 0);*/
+    /*struct nk_font *cousine = nk_font_atlas_add_from_file(atlas, "../../../extra_font/Cousine-Regular.ttf", 13, 0);*/
+    nk_glfw3_font_stash_end(&glfw);
+    /*nk_style_load_all_cursors(ctx, atlas->cursors);*/
+    /*nk_style_set_font(ctx, &droid->handle);*/}
 
     screen_width = width;
     screen_height = height;
@@ -103,7 +154,7 @@ void Amber::mainloop(std::function<void(float)> func)
     destroy();
     document->destroy();
     Engine::Threading::cleanup();
-    std::cout << "Shut down" << std::endl;
+    LOG_SUCCESS("Shut down");
     glfwTerminate();
 }
 
@@ -117,6 +168,9 @@ void Amber::loop()
 
     // Check for keypresses
     glfwPollEvents();
+
+    // Start Nuklear frame
+    nk_glfw3_new_frame(&glfw);
     
     // Clear the screen
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -124,6 +178,7 @@ void Amber::loop()
     // Deal with input stuff (mostly mouse)
     if (mouse_mode == Engine::Input::MouseMode::Captured)
     {
+        // Always set the cursor to the center of the screen
         double x, y;
         glfwGetCursorPos(window, &x, &y);
         offset = glm::vec2(x,y);
@@ -134,6 +189,7 @@ void Amber::loop()
     }
     else if (mouse_mode == Engine::Input::MouseMode::Confined)
     {
+        // Keep the cursor within the confines of the screen
         double x, y;
         glfwGetCursorPos(window, &x, &y);
         offset = old_position - glm::vec2(x,y);
@@ -165,6 +221,7 @@ void Amber::loop()
         }
     }
     else {
+        // The cursor can do whatever it wants
         double x, y;
         glfwGetCursorPos(window, &x, &y);
         offset = old_position - glm::vec2(x,y);
@@ -177,8 +234,21 @@ void Amber::loop()
     // Run the DOM to get everything to render
     document->tick(delta);
 
+    // Render nuklear GUI
+    // nk_end(NKAPI::ctx);
+    nk_glfw3_render(&glfw, NK_ANTI_ALIASING_ON, MAX_VERTEX_BUFFER, MAX_ELEMENT_BUFFER);
+    glEnable(GL_DEPTH_TEST);
+
     // Swap the buffers so it actually shows up
     glfwSwapBuffers(window);
+
+    // Deal with the scroll wheel
+    _scroll_offset = 0;
+}
+
+double Amber::getTime()
+{
+    return glfwGetTime();
 }
 
 void AmberShaderProgram::checkCompileErrors(glm::uint32 shader, AmberShaderType type)
@@ -212,7 +282,24 @@ void AmberShaderProgram::checkCompileErrors(glm::uint32 shader, AmberShaderType 
             std::cerr << "Shader compilation failed: " << errorLog << std::endl;
         }
     }
-    
+}
+
+glm::vec2 Amber::getMouseOffset()
+{
+    return offset;
+}
+
+void onScroll(GLFWwindow* window, double xoffset, double yoffset)
+{
+    Amber::_scroll_offset += yoffset;
+
+    // Call nuklear callbacks
+    nk_gflw3_scroll_callback(window, xoffset, yoffset);
+}
+
+float Amber::getScrollWheelOffset()
+{
+    return Amber::_scroll_offset;
 }
 
 void AmberShaderProgram::loadShaders(std::shared_ptr<ShaderResource> vert, std::shared_ptr<ShaderResource> frag)
@@ -303,7 +390,7 @@ void AmberShaderProgram::setUniform(const std::string name, const glm::mat4& v)
 
 void AmberShaderProgram::destroy()
 {
-    std::cout << "Destroying shaders!" << std::endl;
+    LOG_INFO("Destroying shaders!");
     glDeleteProgram(handle);
 }
 
@@ -408,7 +495,7 @@ void Amber::renderRenderObject(std::shared_ptr<RenderObject> model, glm::mat4 gl
     // Set uniforms
     // TODO: Do this in a more scalable way
     
-    model->shader_program->setUniform("projection", glm::perspective((float)0.8726646, (float)1024/866, 0.1f, 100.0f));
+    model->shader_program->setUniform("projection", glm::perspective((float)0.8726646, (float)screen_width/screen_height, 0.1f, 100.0f));
     model->shader_program->setUniform("view", camera->_getViewMatrix());
     model->shader_program->setUniform("local_transform", local_transform);
     model->shader_program->setUniform("global_transform", global_transform);
@@ -421,6 +508,30 @@ void Amber::setCamera(std::shared_ptr<ICamera> cam)
 {
     has_camera = true;
     camera = cam;
+
+    try
+    {
+        auto cam_element = std::dynamic_pointer_cast<DOM::Element>(cam);
+        if (cam_element->inited == false)
+        {
+            cam_element->init();
+            cam_element->inited = true;
+        }
+    }
+    catch (std::exception e)
+    {
+
+    }
+}
+
+std::shared_ptr<ICamera> Amber::getCamera()
+{
+    if (!has_camera)
+    {
+        LOG_WARN("Trying to get camera with no active camera");
+        return nullptr;
+    }
+    return camera;
 }
 
 bool Amber::isKeyPressed(int key)
@@ -473,6 +584,7 @@ void Amber::destroy()
         shaders[i]->destroy();
     }
 
+    nk_free(NKAPI::ctx);
     glfwTerminate();
 }
 

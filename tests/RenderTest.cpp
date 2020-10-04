@@ -1,11 +1,13 @@
 #include <iostream>
 #include <string>
 
+#include "Engine/DevTools.hpp"
 #include "Engine/Element3D.hpp"
 #include "Engine/Engine.hpp"
 // #include "Engine/DOM.hpp"
 // #include "Engine/Threading.hpp"
 #include "Engine/Input.hpp"
+#include "Engine/Log.hpp"
 #include "Engine/Renderer/Renderer.hpp"
 #include "Engine/Renderer/Amber.hpp"
 #include "Engine/Res.hpp"
@@ -42,7 +44,7 @@ std::shared_ptr<Engine::E3D::CameraElement3D> camera;
 // Render function
 void render(float delta)
 {
-    
+    // LOG_ASSERT(true);
 }
 
 int main(int argc, char const* argv[])
@@ -76,10 +78,17 @@ int main(int argc, char const* argv[])
     tri_element2->scale(glm::vec3(0.5, 0.5, 0.5));
 
     // Camera
+    // camera = std::make_shared<Engine::DevTools::OrbitCamera3D>(document);
     camera = std::make_shared<Engine::E3D::CameraElement3D>(document);
     camera->translate(glm::vec3(0, 0, 5));
+    // camera->init();
 
-    tri_element->appendChild(camera);
+    document->body->appendChild(camera);
+
+    // Add DevTools
+    // TODO: Make this seamless
+    // auto devtools = std::make_shared<Engine::DevTools::DevTools>(document);
+    // document->body->appendChild(devtools);
 
     renderer->setCamera(camera);
 

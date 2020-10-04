@@ -1,5 +1,6 @@
 // #include "Engine/DOM.hpp"
 #include "Engine/Engine.hpp"
+#include "Engine/Log.hpp"
 #include <iostream>
 #include <string>
 #include <memory>
@@ -80,6 +81,7 @@ std::vector<std::shared_ptr<Element>> Element::getChildren()
 
 void Element::setParent(std::shared_ptr<Element> new_parent)
 {
+    LOG_ASSERT_MESSAGE_FATAL(hasParent() && new_parent != nullptr, "Could not run setParent: element has parent and new parent isn't nullptr");
     // Do not run removeChild here 
     parent = new_parent;
 }
@@ -149,7 +151,7 @@ std::shared_ptr<Element> Element::getElementById(std::string id)
             }
         }
     }
-
+    LOG_WARN("Could not find element with given id");
     return nullptr;
 }
 
@@ -168,7 +170,7 @@ std::vector<std::shared_ptr<Element>> Element::getElementsByTagName(std::string 
         }
         else
         {
-            if (children[0]->type_container.isType(document->element_types.getTypeOfElement(tag)))
+            if (children[i]->type_container.isType(document->element_types.getTypeOfElement(tag)))
             {
                 output.push_back(children[i]);
             }
@@ -289,7 +291,7 @@ void ClassList::remove(std::string element_class)
 {
     if (!has(element_class))
     {
-        std::cerr << "Cannot remove class " << element_class << ": Element does not contain this class" << std::endl;
+        LOG_ERROR("Cannot remove class " + element_class + ": Element does not contain this class");
         return;
     }
 
