@@ -1,5 +1,6 @@
 #include "Engine/DevTools.hpp"
 #include "Engine/Engine.hpp"
+#include "Engine/Log.hpp"
 #include "Engine/NKAPI.hpp"
 #include <memory>
 
@@ -119,6 +120,8 @@ void DevTools::process(float delta)
             cam_switch_lock.lock();
             camera_switch = 1;
             cam_switch_lock.unlock();
+
+            is_active = true;
         }
         else
         {
@@ -130,9 +133,16 @@ void DevTools::process(float delta)
             cam_switch_lock.lock();
             camera_switch = 2;
             cam_switch_lock.unlock();
+
+            is_active = false;
         }
         cooldown_time = document->renderer->getTime() + 0.2;
     }
+}
+
+void DevTools::targetCamera(std::shared_ptr<Engine::E3D::Element3D> element)
+{
+    camera->setPosition(element->getGlobalTransform() * element->getTransform() * glm::vec4(0,0,0,1));
 }
 
 // =====================================================
@@ -182,9 +192,19 @@ void DevToolsTree::renderUI(float delta)
 int DevToolsTree::recursiveTreeRender(std::shared_ptr<DOM::Element> element, int id)
 {
     bool worked = nk_tree_push_id(NKAPI::ctx, NK_TREE_NODE, element->getTagName().c_str(), NK_MINIMIZED, id);
+    if (worked)
+    {
+        auto buttons = element->getDevToolsButtons();
+        nk_layout_row_dynamic(NKAPI::ctx, 20, buttons.size());
+        for (std::map<std::string, std::function<void()>>::iterator it = buttons.begin(); it != buttons.end(); it++)
+        {
+            if (nk_button_label(NKAPI::ctx, it->first.c_str()))
+            {
+                it->second();
+            }
+        }
+    }
     id ++;
-
-    // nk_layout_row_dynamic(NKAPI::ctx, 30, 1);
     for (int i = 0; i < element->getChildren().size(); i++)
     {
         if (worked)

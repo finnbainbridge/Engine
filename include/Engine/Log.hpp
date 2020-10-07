@@ -9,7 +9,27 @@ Logging and assertions for Engine
 #include <iostream>
 #include <string>
 
+#ifndef __EMSCRIPTEN__
 #include <term-colors/termcolors.h>
+#else
+namespace termcolors {
+    /**
+     * Colors, according to ANSI color escapes.  Bright variants are
+     * listed in parentheses when they differ in hue.
+     */
+    enum class color {
+        reset   = 9,            /**< Reset to previous color */
+        black   = 0,            /**< Black (Dark Gray) */
+        red     = 1,            /**< Red */
+        green   = 2,            /**< Green */
+        yellow  = 3,            /**< Yellow */
+        blue    = 4,            /**< Blue */
+        magenta = 5,            /**< Magenta */
+        cyan    = 6,            /**< Cyan */
+        white   = 7,            /**< White (Pure White) */
+    };
+}
+#endif
 
 // No fancy classes for this one
 

@@ -1,6 +1,7 @@
 ##### My stuff
 
 build
+embuild
 *.cmake
 *.cmake.in
 *.cmake.out

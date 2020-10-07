@@ -5,10 +5,15 @@ set (CMAKE_CXX_STANDARD 17)
 set(THREADS_PREFER_PTHREAD_FLAG ON)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
+set(GLAD_SOURCE include/glad/glad.h lib/glad/src/glad.c)
+if (EMSCRIPTEN)
+    set(GLAD_SOURCE )
+endif()
+
 include(CTest)
 enable_testing()
 # TODO: Clean up this
-add_library(Engine OBJECT include/glad/glad.h lib/glad/src/glad.c include/Engine/Engine.hpp include/Engine/Renderer/Renderer.hpp include/Engine/Renderer/Amber.hpp
+add_library(Engine OBJECT ${GLAD_SOURCE} include/Engine/Engine.hpp include/Engine/Renderer/Renderer.hpp include/Engine/Renderer/Amber.hpp
             include/Engine/Element3D.hpp include/Engine/DevTools.hpp
             include/Engine/NKAPI.hpp
             # include/nuklear/nuklear.h
@@ -28,16 +33,31 @@ target_link_libraries(Engine PRIVATE Threads::Threads)
 set_target_properties(Engine PROPERTIES VERSION ${PROJECT_VERSION})
 
 
-# GLFW
-set(GLFW_BUILD_DOCS OFF CACHE BOOL "" FORCE)
-set(GLFW_BUILD_TESTS OFF CACHE BOOL "" FORCE)
-set(GLFW_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
+if (NOT EMSCRIPTEN)
+    message("Building for Desktop (OpenGL ES 3.0)")
+    # GLFW
+    set(GLFW_BUILD_DOCS OFF CACHE BOOL "" FORCE)
+    set(GLFW_BUILD_TESTS OFF CACHE BOOL "" FORCE)
+    set(GLFW_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
 
-add_subdirectory(lib/glfw)
+    add_subdirectory(lib/glfw)
+endif()
+
+if (EMSCRIPTEN)
+    message("Building for Web (Emscripten/WebGL 2)")
+    set(CMAKE_EXECUTABLE_SUFFIX ".html")
+
+    # TODO: change this
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} --preload-file ../shaders")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O0 -s USE_WEBGL2=1 -s USE_GLFW=3")
+endif()
 
 target_link_libraries(Engine PRIVATE glfw)
 target_link_libraries(Engine PRIVATE GL)
-target_link_libraries(Engine PRIVATE dl)
+
+if (NOT EMSCRIPTEN)
+    target_link_libraries(Engine PRIVATE dl)
+endif()
 
 SET(CMAKE_CXX_FLAGS_DEBUG_INIT "-g")
 

@@ -11,7 +11,15 @@
 #include <iostream>
 #include <memory>
 #include <string>
+
+#ifdef __EMSCRIPTEN__
+#include <GLES3/gl3.h>
+
+#include <emscripten.h>
+#include <emscripten/html5.h>
+#else
 #include <glad/glad.h>
+#endif
 
 
 #define GLFW_INCLUDE_ES3
@@ -48,6 +56,8 @@ float Amber::_scroll_offset = 0;
 struct nk_glfw glfw = {0};
 #define MAX_VERTEX_BUFFER 512 * 1024
 #define MAX_ELEMENT_BUFFER 128 * 1024
+
+std::function<void()> loop_func;
 
 Amber::Amber(std::shared_ptr<Document> doc): document(doc),
 offset(),
@@ -101,6 +111,7 @@ bool Amber::createWindow(int width, int height, std::string title)
     // 1 for V-sync
     glfwSwapInterval(0);
 
+#ifndef __EMSCRIPTEN__
     if(!gladLoadGLES2Loader((GLADloadproc)glfwGetProcAddress))
     {
         LOG_ERROR("Failed. Could not start OpenGL");
@@ -109,6 +120,8 @@ bool Amber::createWindow(int width, int height, std::string title)
     }
 
     LOG_SUCCESS("OpenGL ES " + std::to_string(GLVersion.major) + "." + std::to_string(GLVersion.minor) + " on " + (char*)glGetString(GL_VENDOR) + " " + (char*)glGetString(GL_RENDERER));
+#endif
+
 
     glClearColor(0.23f, 0.38f, 0.47f, 1.0f);
     
@@ -138,18 +151,34 @@ bool Amber::createWindow(int width, int height, std::string title)
     screen_width = width;
     screen_height = height;
 
+    // Create function for emscripten main loop
+    loop_func = std::bind(&Amber::loop, this);
+
     return true;
 }
+
+#ifdef __EMSCRIPTEN__
+void loop_wrapper()
+{
+    // Amber::loop(amb);
+    loop_func();
+    // return EM_TRUE;
+}
+
+#endif
 
 void Amber::mainloop(std::function<void(float)> func)
 {
     last_frame_start = glfwGetTime();
     render_func = func;
-
+#ifdef __EMSCRIPTEN__
+    emscripten_set_main_loop(loop_wrapper, 0, true);
+#else
     while (!glfwWindowShouldClose(window))
     {
         loop();
     }
+#endif
 
     destroy();
     document->destroy();
@@ -158,7 +187,7 @@ void Amber::mainloop(std::function<void(float)> func)
     glfwTerminate();
 }
 
-void Amber::loop()
+bool Amber::loop()
 {
     // Make sure the context is on the right thread
     glfwMakeContextCurrent(window);
@@ -236,7 +265,7 @@ void Amber::loop()
 
     // Render nuklear GUI
     // nk_end(NKAPI::ctx);
-    nk_glfw3_render(&glfw, NK_ANTI_ALIASING_ON, MAX_VERTEX_BUFFER, MAX_ELEMENT_BUFFER);
+    nk_glfw3_render(&glfw, NK_ANTI_ALIASING_ON);
     glEnable(GL_DEPTH_TEST);
 
     // Swap the buffers so it actually shows up
@@ -244,6 +273,8 @@ void Amber::loop()
 
     // Deal with the scroll wheel
     _scroll_offset = 0;
+
+    return true;
 }
 
 double Amber::getTime()

@@ -49,6 +49,7 @@ void render(float delta)
 
 int main(int argc, char const* argv[])
 {
+    LOG_INFO("Running RenderTest...");
     Engine::Res::ResourceManager::start(argc, argv);
     auto document = Engine::Document::createDocument();
     auto renderer = std::make_shared<Engine::Renderer::Amber>(document);

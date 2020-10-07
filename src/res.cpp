@@ -3,7 +3,6 @@
 THIS FILE IS STUPID!
 ====================
 */
-
 #include "Engine/Res.hpp"
 #include <filesystem>
 std::string directory = "";
@@ -30,7 +29,6 @@ std::shared_ptr<Engine::Res::IResource> Engine::Res::ResourceManager::getCachedR
     catch (std::exception sx)
     {
         return nullptr;
-        
     }
 }
 

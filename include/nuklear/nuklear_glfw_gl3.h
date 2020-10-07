@@ -100,6 +100,12 @@ struct nk_glfw_vertex {
   #define NK_SHADER_VERSION "#version 300 es\n"
 #endif
 
+// void* vertices;
+// void* elements;
+
+const int max_vertex_buffer = 512*1024;
+const int max_element_buffer = 128*1024;
+
 NK_API void
 nk_glfw3_device_create(struct nk_glfw* glfw)
 {
@@ -181,6 +187,9 @@ nk_glfw3_device_create(struct nk_glfw* glfw)
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
     glBindVertexArray(0);
+
+    // vertices = (void*)malloc(max_vertex_buffer);
+    // elements = (void*)malloc(max_element_buffer);
 }
 
 NK_INTERN void
@@ -211,7 +220,7 @@ nk_glfw3_device_destroy(struct nk_glfw* glfw)
 }
 
 NK_API void
-nk_glfw3_render(struct nk_glfw* glfw, enum nk_anti_aliasing AA, int max_vertex_buffer, int max_element_buffer)
+nk_glfw3_render(struct nk_glfw* glfw, enum nk_anti_aliasing AA)
 {
     struct nk_glfw_device *dev = &glfw->ogl;
     struct nk_buffer vbuf, ebuf;
@@ -241,8 +250,8 @@ nk_glfw3_render(struct nk_glfw* glfw, enum nk_anti_aliasing AA, int max_vertex_b
     {
         /* convert from command queue into draw list and draw to screen */
         const struct nk_draw_command *cmd;
-        void *vertices, *elements;
         const nk_draw_index *offset = NULL;
+        void *vertices, *elements;
 
         /* allocate vertex and element buffer */
         glBindVertexArray(dev->vao);
@@ -252,11 +261,56 @@ nk_glfw3_render(struct nk_glfw* glfw, enum nk_anti_aliasing AA, int max_vertex_b
         glBufferData(GL_ARRAY_BUFFER, max_vertex_buffer, NULL, GL_STREAM_DRAW);
         glBufferData(GL_ELEMENT_ARRAY_BUFFER, max_element_buffer, NULL, GL_STREAM_DRAW);
 
+        // OLD CODE ====================================================================================
         /* load draw vertices & elements directly into vertex + element buffer */
         // vertices = glMapBuffer(GL_ARRAY_BUFFER, GL_WRITE_ONLY);
         // elements = glMapBuffer(GL_ELEMENT_ARRAY_BUFFER, GL_WRITE_ONLY);
-        vertices = glMapBufferRange(GL_ARRAY_BUFFER, 0, max_vertex_buffer, GL_MAP_WRITE_BIT);
-        elements = glMapBufferRange(GL_ELEMENT_ARRAY_BUFFER, 0, max_element_buffer, GL_MAP_WRITE_BIT);
+        // vertices = glMapBufferRange(GL_ARRAY_BUFFER, 0, max_vertex_buffer, GL_MAP_WRITE_BIT);
+        // elements = glMapBufferRange(GL_ELEMENT_ARRAY_BUFFER, 0, max_element_buffer, GL_MAP_WRITE_BIT);
+        
+        // glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(vertices), &vertices);
+        // glBufferSubData(GL_ELEMENT_ARRAY_BUFFER, 0, sizeof(elements), &elements);
+        // {
+        //     /* fill convert configuration */
+        //     struct nk_convert_config config;
+        //     static const struct nk_draw_vertex_layout_element vertex_layout[] = {
+        //         {NK_VERTEX_POSITION, NK_FORMAT_FLOAT, NK_OFFSETOF(struct nk_glfw_vertex, position)},
+        //         {NK_VERTEX_TEXCOORD, NK_FORMAT_FLOAT, NK_OFFSETOF(struct nk_glfw_vertex, uv)},
+        //         {NK_VERTEX_COLOR, NK_FORMAT_R8G8B8A8, NK_OFFSETOF(struct nk_glfw_vertex, col)},
+        //         {NK_VERTEX_LAYOUT_END}
+        //     };
+        //     NK_MEMSET(&config, 0, sizeof(config));
+        //     config.vertex_layout = vertex_layout;
+        //     config.vertex_size = sizeof(struct nk_glfw_vertex);
+        //     config.vertex_alignment = NK_ALIGNOF(struct nk_glfw_vertex);
+        //     config.null = dev->null;
+        //     config.circle_segment_count = 22;
+        //     config.curve_segment_count = 22;
+        //     config.arc_segment_count = 22;
+        //     config.global_alpha = 1.0f;
+        //     config.shape_AA = AA;
+        //     config.line_AA = AA;
+
+        //     /* setup buffers to load vertices and elements */
+        //     // nk_buffer_init_fixed(&vbuf, vertices, (size_t)max_vertex_buffer);
+        //     // nk_buffer_init_fixed(&ebuf, elements, (size_t)max_element_buffer);
+        //     /* convert shapes into vertexes */
+        //     nk_buffer_init_default(&vbuf);
+        //     nk_buffer_init_default(&ebuf);
+
+        //     nk_convert(&glfw->ctx, &dev->cmds, &vbuf, &ebuf, &config);
+        // }
+
+        // // vertices = nk_buffer_memory(&vbuf);
+        // // elements = nk_buffer_memory(&ebuf);
+        // glBufferSubData(GL_ARRAY_BUFFER, 0, max_vertex_buffer, &vertices);
+        // glBufferSubData(GL_ELEMENT_ARRAY_BUFFER, 0, max_element_buffer, &elements);
+
+        // =======================================================================================
+
+        /* load vertices/elements directly into vertex/element buffer */
+        vertices = malloc((size_t)max_vertex_buffer);
+        elements = malloc((size_t)max_element_buffer);
         {
             /* fill convert configuration */
             struct nk_convert_config config;
@@ -279,12 +333,15 @@ nk_glfw3_render(struct nk_glfw* glfw, enum nk_anti_aliasing AA, int max_vertex_b
             config.line_AA = AA;
 
             /* setup buffers to load vertices and elements */
-            nk_buffer_init_fixed(&vbuf, vertices, (size_t)max_vertex_buffer);
-            nk_buffer_init_fixed(&ebuf, elements, (size_t)max_element_buffer);
-            nk_convert(&glfw->ctx, &dev->cmds, &vbuf, &ebuf, &config);
+            {struct nk_buffer vbuf, ebuf;
+            nk_buffer_init_fixed(&vbuf, vertices, (nk_size)max_vertex_buffer);
+            nk_buffer_init_fixed(&ebuf, elements, (nk_size)max_element_buffer);
+            nk_convert(&glfw->ctx, &dev->cmds, &vbuf, &ebuf, &config);}
         }
-        glUnmapBuffer(GL_ARRAY_BUFFER);
-        glUnmapBuffer(GL_ELEMENT_ARRAY_BUFFER);
+        glBufferSubData(GL_ARRAY_BUFFER, 0, (size_t)max_vertex_buffer, vertices);
+        glBufferSubData(GL_ELEMENT_ARRAY_BUFFER, 0, (size_t)max_element_buffer, elements);
+        free(vertices);
+        free(elements);
 
         /* iterate over and execute each draw command */
         nk_draw_foreach(cmd, &glfw->ctx, &dev->cmds)

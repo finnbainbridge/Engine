@@ -79,6 +79,11 @@ namespace Engine
                 // This tells all this element's children to update their positions. This should be called after 
                 // you modify the transformation matricies yourself
                 void callChildUpdate();
+
+                // Tells the devtools orbit camera to target this element
+                // This should *only* be called while devtools is open
+                void devtoolsOrbit();
+
         };
 
 

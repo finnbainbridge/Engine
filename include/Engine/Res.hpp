@@ -2,6 +2,7 @@
 #define ENGINE_RES_H
 
 #include "Engine/Engine.hpp"
+#include "Engine/Log.hpp"
 #include <algorithm>
 #include <exception>
 #include <fstream>
@@ -50,13 +51,12 @@ namespace Engine {
                 template<typename res_t>
                 static std::shared_ptr<res_t> load(std::string filename, FileType file_type = FileType::text, bool force_new = false)
                 {
-                    // std::shared_ptr<res_t> ptr = std::dynamic_pointer_cast<std::shared_ptr<res_t>>(getCachedRes(filename));
-                    // For now F*** cache
+                    std::shared_ptr<res_t> ptr = std::dynamic_pointer_cast<res_t>(getCachedRes(filename));
 
-                    // if (force_new || ptr == nullptr)
-                    // {
+                    if (force_new || ptr == nullptr)
+                    {
                         LOG_INFO("Loaded file: " + getDirname() + "/" + filename);
-                        auto ptr = std::make_shared<res_t>();
+                        ptr = std::make_shared<res_t>();
                         if (file_type == FileType::text)
                         {
                             std::shared_ptr<std::ifstream> data = std::make_shared<std::ifstream>(getDirname() + "/" + filename);
@@ -68,8 +68,10 @@ namespace Engine {
                             ((std::shared_ptr<IResource>)ptr)->loadFile(data);
                         }
 
-                        // setCachedRes(filename, ptr);
-                    // }
+                        setCachedRes(filename, ptr);
+                    }
+
+                    LOG_ASSERT_MESSAGE_FATAL(ptr == nullptr, "Resource loading failed both badly, and inexplicably");
 
                     return ptr;
                 }

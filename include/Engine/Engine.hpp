@@ -1,6 +1,10 @@
 #ifndef ENGINE_H
 #define ENGINE_H
 
+#ifdef __EMSCRIPTEN__
+#define ENGINE_NO_THREADING
+#endif
+
 // #include "Engine/DOM.hpp"
 
 // #include "Engine/Threading.hpp"
@@ -149,7 +153,7 @@ namespace Engine
             bool has(std::string element_class);
         };
 
-        typedef std::variant<uint, int, float, std::string> AttrVariant;
+        typedef std::variant<unsigned int, int, float, std::string> AttrVariant;
         class Element: public std::enable_shared_from_this<Element>
         {
         private:
@@ -160,6 +164,8 @@ namespace Engine
 
             bool visible = true;
             bool do_process = true;
+
+            std::map<std::string, std::function<void()>> devtools_buttons;
 
         public:
             Element(std::shared_ptr<Document> parent_document);
@@ -264,6 +270,17 @@ namespace Engine
 
             // A smart pointer to the document
             std::shared_ptr<Engine::Document> document;
+
+            // DevTools buttons
+            void addDevToolsButton(std::string name, std::function<void()> func)
+            {
+                devtools_buttons[name] = func;
+            }
+
+            std::map<std::string, std::function<void()>> getDevToolsButtons() const
+            {
+                return devtools_buttons;
+            }
 
         protected:
             // Set this first thing

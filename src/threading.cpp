@@ -1,5 +1,8 @@
 #include "Engine/Engine.hpp"
 // #define ENGINE_NO_THREADING
+#ifdef __EMSCRIPTEN__
+#define ENGINE_NO_THREADING
+#endif
 #include <queue>
 #include <mutex>
 using namespace Engine;

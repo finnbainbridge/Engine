@@ -8,6 +8,8 @@
 #include <glm/gtc/type_ptr.hpp>
 #include <memory>
 
+#include "Engine/DevTools.hpp"
+
 using namespace Engine::E3D;
 
 Element3D::Element3D(std::shared_ptr<Document> parent_document): DOM::Element(parent_document),
@@ -29,6 +31,14 @@ transform_lock()
     global_transform_lock.lock();
     global_transform = glm::make_mat4(aaa);
     global_transform_lock.unlock();
+
+    addDevToolsButton("Orbit", std::bind(&Element3D::devtoolsOrbit, this));
+}
+
+void Element3D::devtoolsOrbit()
+{
+    LOG_ASSERT_MESSAGE_FATAL(!document->devtools->is_active, "Devtools must be active for devtoolsOrbit to be called");
+    document->devtools->targetCamera(std::dynamic_pointer_cast<Element3D>(shared_from_this()));
 }
 
 glm::mat4 Element3D::getTransform() const

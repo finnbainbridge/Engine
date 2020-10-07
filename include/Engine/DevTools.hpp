@@ -56,6 +56,10 @@ namespace Engine {
                 virtual void init();
                 virtual void render(float delta);
                 virtual void process(float delta);
+
+                bool is_active = false;
+
+                void targetCamera(std::shared_ptr<E3D::Element3D> element);
         };
 
         /*

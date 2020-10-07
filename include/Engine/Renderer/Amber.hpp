@@ -67,8 +67,6 @@ namespace Engine {
                 std::vector<std::shared_ptr<AmberShaderProgram>> shaders;
                 std::vector<std::shared_ptr<AmberRenderObject>> objects;
 
-                void loop();
-
                 bool has_camera = false;
                 std::shared_ptr<ICamera> camera;
 
@@ -87,6 +85,7 @@ namespace Engine {
                 static int screen_height;
 
                 virtual void mainloop(std::function<void(float)> func);
+                bool loop();
 
                 virtual double getTime();
 
