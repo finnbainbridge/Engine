@@ -17,6 +17,7 @@ add_library(Engine OBJECT ${GLAD_SOURCE} include/Engine/Engine.hpp include/Engin
             include/Engine/Element3D.hpp include/Engine/DevTools.hpp
             include/Engine/NKAPI.hpp
             # include/nuklear/nuklear.h
+            lib/tinyxml2/tinyxml2.cpp
             include/Engine/Log.hpp
             src/DevTools/log.cpp
              src/res.cpp src/engine.cpp src/DOM/dom.cpp src/threading.cpp src/renderer/Amber/amber.cpp
@@ -49,7 +50,7 @@ if (EMSCRIPTEN)
 
     # TODO: change this
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} --preload-file ../shaders")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O0 -s USE_WEBGL2=1 -s USE_GLFW=3")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O0 -s USE_WEBGL2=1 -s USE_GLFW=3 -s DISABLE_EXCEPTION_CATCHING=0")
 endif()
 
 target_link_libraries(Engine PRIVATE glfw)
@@ -59,7 +60,7 @@ if (NOT EMSCRIPTEN)
     target_link_libraries(Engine PRIVATE dl)
 endif()
 
-SET(CMAKE_CXX_FLAGS_DEBUG_INIT "-g")
+# SET(CMAKE_CXX_FLAGS_DEBUG_INIT "-g")
 
 # Nuklear
 set_source_files_properties(include/nuklear/nuklear_glfw_gl3.h PROPERTIES COMPILE_FLAGS -fpermissive)

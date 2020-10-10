@@ -191,7 +191,12 @@ void DevToolsTree::renderUI(float delta)
 
 int DevToolsTree::recursiveTreeRender(std::shared_ptr<DOM::Element> element, int id)
 {
-    bool worked = nk_tree_push_id(NKAPI::ctx, NK_TREE_NODE, element->getTagName().c_str(), NK_MINIMIZED, id);
+    std::string name = element->getTagName();
+    if (element->getId() != "")
+    {
+        name += "#" + element->getId();
+    }
+    bool worked = nk_tree_push_id(NKAPI::ctx, NK_TREE_NODE, name.c_str(), NK_MINIMIZED, id);
     if (worked)
     {
         auto buttons = element->getDevToolsButtons();

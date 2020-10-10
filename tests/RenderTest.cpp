@@ -20,6 +20,7 @@ class TriangleElement3D : public Engine::E3D::ManualMeshElement3D {
         TriangleElement3D(std::shared_ptr<Engine::Document> document);
         ~TriangleElement3D();
         virtual void process(float delta);
+        virtual void init();
 
     protected:
 };
@@ -31,6 +32,16 @@ TriangleElement3D::TriangleElement3D(std::shared_ptr<Engine::Document> document)
 }
 
 TriangleElement3D::~TriangleElement3D() {}
+void TriangleElement3D::init()
+{
+    auto shader = document->renderer->addShaderProgram(Engine::Res::ResourceManager::load<Engine::Renderer::ShaderResource>("shaders/basic.vert"),
+                Engine::Res::ResourceManager::load<Engine::Renderer::ShaderResource>("shaders/basic.frag"));
+
+    setMesh(std::vector<glm::vec3> {glm::vec3(0, 1, 0), glm::vec3(1, -1, 0), glm::vec3(-1, -1, 0)}, 
+            std::vector<glm::vec3> {glm::vec3(0, -1, 0), glm::vec3(1, 1, 0), glm::vec3(-1, 1, 0)},
+            std::vector<glm::vec2> {glm::vec2(0, -1), glm::vec2(1, 1), glm::vec2(-1, 1)},
+            std::vector<glm::uint32> {0, 1, 2}, shader);
+}
 
 void TriangleElement3D::process(float delta)
 {
@@ -55,28 +66,30 @@ int main(int argc, char const* argv[])
     auto renderer = std::make_shared<Engine::Renderer::Amber>(document);
     renderer->createWindow(1024, 866, "Test");
 
-    auto tri_element = std::make_shared<TriangleElement3D>(document);
-    document->body->appendChild(tri_element);
-    auto shader = document->renderer->addShaderProgram(Engine::Res::ResourceManager::load<Engine::Renderer::ShaderResource>("shaders/basic.vert"),
-                Engine::Res::ResourceManager::load<Engine::Renderer::ShaderResource>("shaders/basic.frag"));
+    document->addElement("triangle", std::make_shared<Engine::DOM::ElementClassFactory<TriangleElement3D>>());
 
-    tri_element->setMesh(std::vector<glm::vec3> {glm::vec3(0, 1, 0), glm::vec3(1, -1, 0), glm::vec3(-1, -1, 0)}, 
-            std::vector<glm::vec3> {glm::vec3(0, -1, 0), glm::vec3(1, 1, 0), glm::vec3(-1, 1, 0)},
-            std::vector<glm::vec2> {glm::vec2(0, -1), glm::vec2(1, 1), glm::vec2(-1, 1)},
-            std::vector<glm::uint32> {0, 1, 2}, shader);
+    // auto tri_element = std::make_shared<TriangleElement3D>(document);
+    // document->body->appendChild(tri_element);
+    // // auto shader = document->renderer->addShaderProgram(Engine::Res::ResourceManager::load<Engine::Renderer::ShaderResource>("shaders/basic.vert"),
+    // //             Engine::Res::ResourceManager::load<Engine::Renderer::ShaderResource>("shaders/basic.frag"));
 
-    auto tri_element2 = std::make_shared<Engine::E3D::ManualMeshElement3D>(document);
-    tri_element->appendChild(tri_element2);
+    // // tri_element->setMesh(std::vector<glm::vec3> {glm::vec3(0, 1, 0), glm::vec3(1, -1, 0), glm::vec3(-1, -1, 0)}, 
+    // //         std::vector<glm::vec3> {glm::vec3(0, -1, 0), glm::vec3(1, 1, 0), glm::vec3(-1, 1, 0)},
+    // //         std::vector<glm::vec2> {glm::vec2(0, -1), glm::vec2(1, 1), glm::vec2(-1, 1)},
+    // //         std::vector<glm::uint32> {0, 1, 2}, shader);
 
-    auto green_shader = document->renderer->addShaderProgram(Engine::Res::ResourceManager::load<Engine::Renderer::ShaderResource>("shaders/basic.vert"),
-                Engine::Res::ResourceManager::load<Engine::Renderer::ShaderResource>("shaders/green.frag"));
+    // auto tri_element2 = std::make_shared<TriangleElement3D>(document);
+    // tri_element->appendChild(tri_element2);
 
-    tri_element2->setMesh(std::vector<glm::vec3> {glm::vec3(0, 1, 0), glm::vec3(1, -1, 0), glm::vec3(-1, -1, 0)}, 
-            std::vector<glm::vec3> {glm::vec3(0, -1, 0), glm::vec3(1, 1, 0), glm::vec3(-1, 1, 0)},
-            std::vector<glm::vec2> {glm::vec2(0, -1), glm::vec2(1, 1), glm::vec2(-1, 1)},
-            std::vector<glm::uint32> {0, 1, 2}, green_shader);
-    tri_element2->translate(glm::vec3(0,0,-1));
-    tri_element2->scale(glm::vec3(0.5, 0.5, 0.5));
+    // auto green_shader = document->renderer->addShaderProgram(Engine::Res::ResourceManager::load<Engine::Renderer::ShaderResource>("shaders/basic.vert"),
+    //             Engine::Res::ResourceManager::load<Engine::Renderer::ShaderResource>("shaders/green.frag"));
+
+    // // tri_element2->setMesh(std::vector<glm::vec3> {glm::vec3(0, 1, 0), glm::vec3(1, -1, 0), glm::vec3(-1, -1, 0)}, 
+    // //         std::vector<glm::vec3> {glm::vec3(0, -1, 0), glm::vec3(1, 1, 0), glm::vec3(-1, 1, 0)},
+    // //         std::vector<glm::vec2> {glm::vec2(0, -1), glm::vec2(1, 1), glm::vec2(-1, 1)},
+    // //         std::vector<glm::uint32> {0, 1, 2}, green_shader);
+    // tri_element2->translate(glm::vec3(0,0,-1));
+    // tri_element2->scale(glm::vec3(0.5, 0.5, 0.5));
 
     // Camera
     // camera = std::make_shared<Engine::DevTools::OrbitCamera3D>(document);
@@ -86,10 +99,10 @@ int main(int argc, char const* argv[])
 
     document->body->appendChild(camera);
 
-    // Add DevTools
-    // TODO: Make this seamless
-    // auto devtools = std::make_shared<Engine::DevTools::DevTools>(document);
-    // document->body->appendChild(devtools);
+    // tri_element->saveToFile("/shaders/save_test.xml");
+
+    // Test XML loading
+    document->body->appendChild(document->loadFromFile("shaders/save_test.xml"));
 
     renderer->setCamera(camera);
 

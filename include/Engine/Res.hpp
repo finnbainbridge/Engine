@@ -4,12 +4,14 @@
 #include "Engine/Engine.hpp"
 #include "Engine/Log.hpp"
 #include <algorithm>
+#include <bits/types/FILE.h>
 #include <exception>
 #include <fstream>
 #include <string>
 #include <memory>
 #include <map>
 #include <iostream>
+#include <sstream>
 
 namespace Engine {
     namespace Res {
@@ -20,6 +22,11 @@ namespace Engine {
             public:
                 virtual void loadFile(std::shared_ptr<std::ifstream> data) {};
                 static FileType file_type;
+
+                virtual void saveFile(std::string filename)
+                {
+
+                }
 
                 IResource() {};
         };
@@ -57,15 +64,17 @@ namespace Engine {
                     {
                         LOG_INFO("Loaded file: " + getDirname() + "/" + filename);
                         ptr = std::make_shared<res_t>();
-                        if (file_type == FileType::text)
+                        if (res_t::file_type == FileType::text)
                         {
                             std::shared_ptr<std::ifstream> data = std::make_shared<std::ifstream>(getDirname() + "/" + filename);
                             ((std::shared_ptr<IResource>)ptr)->loadFile(data);
+                            data->close();
                         }
-                        else if (file_type == FileType::binary)
+                        else if (res_t::file_type == FileType::binary)
                         {
                             std::shared_ptr<std::ifstream> data = std::make_shared<std::ifstream>(getDirname() + "/" + filename, std::ios::binary);
                             ((std::shared_ptr<IResource>)ptr)->loadFile(data);
+                            data->close();
                         }
 
                         setCachedRes(filename, ptr);
@@ -74,6 +83,51 @@ namespace Engine {
                     LOG_ASSERT_MESSAGE_FATAL(ptr == nullptr, "Resource loading failed both badly, and inexplicably");
 
                     return ptr;
+                }
+
+                // Returnes a stream that can be written to. It will _not_ be automatically closed
+                static std::shared_ptr<std::ofstream> save(std::string filename,  FileType file_type = FileType::text)
+                {
+                    std::shared_ptr<std::ofstream> data;
+                    if (file_type == FileType::text)
+                    {
+                        data = std::make_shared<std::ofstream>(getDirname() + "/" + filename);
+                    }
+                    else
+                    {
+                        data = std::make_shared<std::ofstream>(getDirname() + "/" + filename, std::ios::binary);
+                    }
+                    return data;
+                }
+        };
+
+        class TextResource: public IResource
+        {
+            private:
+                std::string text;
+            public:
+                virtual void loadFile(std::shared_ptr<std::ifstream> data)
+                {
+                    std::stringstream ss;
+                    ss << data->rdbuf();
+                    // data->close();
+
+                    text = ss.str();
+                };
+
+                TextResource() {};
+
+                std::string getText() const
+                {
+                    return text;
+                }
+
+                virtual void saveFile(std::string filename)
+                {
+                    // We are saving the text file as binary because we can't use "<<" on a pointer
+                    auto stream = ResourceManager::save(filename, FileType::binary);
+                    stream->write(getText().c_str(), sizeof(getText().c_str()));
+                    stream->close();
                 }
         };
     }

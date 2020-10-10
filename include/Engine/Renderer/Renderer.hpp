@@ -26,7 +26,7 @@ namespace Engine {
                 {
                     std::stringstream ss;
                     ss << data->rdbuf();
-                    data->close();
+                    // data->close();
 
                     text = ss.str();
                 }

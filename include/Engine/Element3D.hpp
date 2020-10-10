@@ -84,6 +84,9 @@ namespace Engine
                 // This should *only* be called while devtools is open
                 void devtoolsOrbit();
 
+                virtual void onLoad();
+                virtual void onSave();
+
         };
 
 
@@ -110,6 +113,13 @@ namespace Engine
                 void setMesh(std::vector<glm::vec3> points, std::vector<glm::vec3> normals, std::vector<glm::vec2> tex_coords, std::vector<glm::uint32> indicies, std::shared_ptr<Renderer::ShaderProgram> shaders);
 
                 virtual void render(float delta);
+        };
+
+        // The extension class
+        class E3DExtension: public IExtension
+        {
+            public:
+                virtual void start(std::shared_ptr<Document> doc);
         };
     }
 }

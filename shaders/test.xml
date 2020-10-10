@@ -1,0 +1,9 @@
+<?xml version="1.0" ?>
+<test1>
+    <tes2 id="hello">
+
+    </tes2>
+    <test3 blah="2">
+        <test4></test4>
+    </test3>
+</test1>

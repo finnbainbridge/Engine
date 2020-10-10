@@ -1,5 +1,6 @@
 #include "Engine/Element3D.hpp"
 #include "Engine/Engine.hpp"
+#include "Engine/Log.hpp"
 #include "Engine/Renderer/Renderer.hpp"
 #include "glm/ext/matrix_transform.hpp"
 #include "glm/fwd.hpp"
@@ -7,6 +8,8 @@
 #include "glm/matrix.hpp"
 #include <glm/gtc/type_ptr.hpp>
 #include <memory>
+#include <stdexcept>
+#include <string>
 
 #include "Engine/DevTools.hpp"
 
@@ -121,6 +124,93 @@ void Element3D::callChildUpdate()
     }
 }
 
+glm::mat4 stringToMatrix(std::string s)
+{
+    std::string delimiter = " ";
+
+    float aaa[16];
+    int i = 0;
+
+    try
+    {
+        size_t pos = 0;
+        std::string token;
+        while ((pos = s.find(delimiter)) != std::string::npos) {
+            token = s.substr(0, pos);
+            aaa[i] = std::stof(token);
+            i += 1;
+            s.erase(0, pos + delimiter.length());
+        }
+        aaa[i] = std::stof(s);
+    }
+    catch (std::invalid_argument)
+    {
+        LOG_ERROR("Could not load Matrix: Malformed string");
+    }
+
+    return glm::make_mat4(aaa);
+}
+
+// Saving and loading
+void Element3D::onLoad()
+{
+    if (hasAttribute("transform"))
+    {
+        try
+        {
+            transform_lock.lock();
+            transform = stringToMatrix(std::get<std::string>(getAttribute("transform")));
+            transform_lock.unlock();
+        }
+        catch (std::bad_variant_access e)
+        {
+            LOG_ERROR("Loading file: Element3D's attribute transform was not in the correct format");
+        }
+    }
+    else
+    {
+        LOG_WARN("Loading file: Element3D could not find transform attribute. Skipping");
+    }
+
+    // if (hasAttribute("global_transform"))
+    // {
+    //     try
+    //     {
+    //         global_transform_lock.lock();
+    //         global_transform = stringToMatrix(std::get<std::string>(getAttribute("global_transform")));
+    //         global_transform_lock.unlock();
+    //     }
+    //     catch (std::bad_variant_access e)
+    //     {
+    //         LOG_ERROR("Loading file: Element3D's attribute global_transform was not in the correct format");
+    //     }
+    // }
+    // else
+    // {
+    //     LOG_WARN("Loading file: Element3D could not find global_transform attribute. Skipping");
+    // }
+}
+
+// Saving
+void Element3D::onSave()
+{
+    transform_lock.lock();
+    setAttribute("transform", std::to_string(transform[0][0]) + " " + std::to_string(transform[0][1]) + " " + std::to_string(transform[0][2]) + " " + std::to_string(transform[0][3]) + " " + 
+                    std::to_string(transform[1][0]) + " " + std::to_string(transform[1][1]) + " " + std::to_string(transform[1][2]) + " " + std::to_string(transform[1][3]) + " " +
+                    std::to_string(transform[2][0]) + " " + std::to_string(transform[2][1]) + " " + std::to_string(transform[2][2]) + " " + std::to_string(transform[2][3]) + " " +
+                    std::to_string(transform[3][0]) + " " + std::to_string(transform[3][1]) + " " + std::to_string(transform[3][2]) + " " + std::to_string(transform[3][3]));
+
+    transform_lock.unlock();
+
+    // global_transform_lock.lock();
+    // setAttribute("global_transform", std::to_string(global_transform[0][0]) + " " + std::to_string(global_transform[0][1]) + " " + std::to_string(global_transform[0][2]) + " " + std::to_string(global_transform[0][3]) + " " + 
+    //                 std::to_string(global_transform[1][0]) + " " + std::to_string(global_transform[1][1]) + " " + std::to_string(global_transform[1][2]) + " " + std::to_string(global_transform[1][3]) + " " +
+    //                 std::to_string(global_transform[2][0]) + " " + std::to_string(global_transform[2][1]) + " " + std::to_string(global_transform[2][2]) + " " + std::to_string(global_transform[2][3]) + " " +
+    //                 std::to_string(global_transform[3][0]) + " " + std::to_string(global_transform[3][1]) + " " + std::to_string(global_transform[3][2]) + " " + std::to_string(global_transform[3][3]));
+
+    // global_transform_lock.unlock();
+}
+
 CameraElement3D::CameraElement3D(std::shared_ptr<Document> document): Element3D::Element3D(document)
 {
     setTagName("camera3d");
@@ -157,4 +247,13 @@ void ManualMeshElement3D::render(float delta)
     document->renderer->renderRenderObject(render_object, global_transform, transform);
     global_transform_lock.unlock();
     transform_lock.unlock();
+}
+
+// ==========================================================
+// Extension
+void E3DExtension::start(std::shared_ptr<Document> doc)
+{
+    doc->addElement("element3d", std::make_shared<DOM::ElementClassFactory<Element3D>>());
+    doc->addElement("camera3d", std::make_shared<DOM::ElementClassFactory<CameraElement3D>>());
+    doc->addElement("manualmesh3d", std::make_shared<DOM::ElementClassFactory<ManualMeshElement3D>>());
 }

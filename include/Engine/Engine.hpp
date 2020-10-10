@@ -1,6 +1,7 @@
 #ifndef ENGINE_H
 #define ENGINE_H
 
+#include "tinyxml2/tinyxml2.h"
 #ifdef __EMSCRIPTEN__
 #define ENGINE_NO_THREADING
 #endif
@@ -24,6 +25,11 @@
 #include "glm/fwd.hpp"
 #include "Engine/Log.hpp"
 
+// So I don't have header hell
+namespace tinyxml2
+{
+    class XMLElement;
+}
 
 namespace Engine
 {
@@ -143,10 +149,12 @@ namespace Engine
         class ClassList
         {
         private:
-            std::vector<std::string> classes;
+            
         public:
             ClassList();
             ~ClassList();
+
+            std::vector<std::string> classes;
 
             void add(std::string element_class);
             void remove(std::string element_class);
@@ -166,6 +174,8 @@ namespace Engine
             bool do_process = true;
 
             std::map<std::string, std::function<void()>> devtools_buttons;
+
+            tinyxml2::XMLElement* elementToXMLElement(std::shared_ptr<Element> elem, tinyxml2::XMLDocument* doc);
 
         public:
             Element(std::shared_ptr<Document> parent_document);
@@ -222,6 +232,24 @@ namespace Engine
 
             // The _other_ main loop. This function will be called syncrinously. Mostly intended for rendering
             virtual void render(float delta) {};
+
+            // This gets called when this element is loaded from an xml file. Runs syncrinously, before init()
+            // Use this to load all your data from attributes
+            virtual void onLoad()
+            {
+
+            }
+
+            // This gets called when this element is being saved to a file. 
+            // Store all your important data into attributes
+            virtual void onSave()
+            {
+
+            }
+
+            // Saves this element (and all it's children) to the specified file
+            // The produced XML can be loaded with document.loadFromFile
+            void saveToFile(std::string filename);
 
             // Sets the visibility of this element. If it's invisible, the render function of this element and it's children will not be called
             void setVisible(bool new_vis)
@@ -287,7 +315,35 @@ namespace Engine
             std::string tag_name = "element";
             std::string id; // Id will also be an attribute, but we put it here for easy access
         };
+
+        // Template black magic to get this to work
+        class ElementClass
+        {
+            public:
+                virtual std::shared_ptr<Element> getNewInstance(std::shared_ptr<Document> doc) {return nullptr;};
+        };
+
+        // Class that stores an element type. Can be used to make more instances of that type
+        template<typename T>
+        class ElementClassFactory: public ElementClass
+        {
+            public:
+                virtual std::shared_ptr<Element> getNewInstance(std::shared_ptr<Document> doc)
+                {
+                    return std::dynamic_pointer_cast<Element>(std::make_shared<T>(doc));
+                }
+        };
     } // namespace DOM
+
+    /*
+    A small class where you can put your initialisation code, for example adding all your elements to the Document
+    */
+    class IExtension
+    {
+        private:
+        public:
+            virtual void start(std::shared_ptr<Document> doc) {};
+    };
 
     class Document: public std::enable_shared_from_this<Document>
     {
@@ -304,6 +360,7 @@ namespace Engine
 
         void executeElement(float delta, std::shared_ptr<DOM::Element> element);
         void renderElement(float delta, std::shared_ptr<DOM::Element> element);
+        std::shared_ptr<Engine::DOM::Element> xmlElementToElement(tinyxml2::XMLElement* node);
 
     public:
         Document();
@@ -311,11 +368,28 @@ namespace Engine
 
         Types::ElementTypes element_types;
 
+        // A map which contains the classes of each element. 
+        // Mainly used when loading XML to instanciate the correct classes
+        std::map<std::string, std::shared_ptr<DOM::ElementClass>> element_classes;
+
+        // Adds an element to the central database. Only added elements will be able to be loaded from files
+        void addElement(std::string name, std::shared_ptr<DOM::ElementClass> type);
+
+        // Loads elements from an XML file. returns a shared pointer to the base element of the file
+        // Elements will only be properly loaded if they've beed added to the document using addElement
+        std::shared_ptr<DOM::Element> loadFromFile(std::string filename);
+
         std::shared_ptr<DOM::Element> head;
         std::shared_ptr<DOM::Element> body;
         std::shared_ptr<DevTools::DevTools> devtools;
 
         void setup();
+
+        // Adds an extension to the document. The E3D extension (for 3d related elements) is added automatically
+        void addExtension(std::shared_ptr<IExtension> ext)
+        {
+            ext->start(shared_from_this());
+        }
 
         // std::shared_ptr<DOM::Element> createElement(DOM::Element* element);
 

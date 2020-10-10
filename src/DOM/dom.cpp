@@ -1,13 +1,17 @@
 // #include "Engine/DOM.hpp"
 #include "Engine/Engine.hpp"
 #include "Engine/Log.hpp"
+#include "Engine/Res.hpp"
+#include <fstream>
 #include <iostream>
 #include <string>
 #include <memory>
+#include <variant>
 #include <vector>
 #include <map>
 #include <algorithm>
 
+#include <tinyxml2/tinyxml2.h>
 
 using namespace Engine::DOM;
 
@@ -317,3 +321,77 @@ bool ClassList::has(std::string element_class)
 
     return false;
 }
+
+
+// ==============================================================
+// Saving
+void Element::saveToFile(std::string filename)
+{
+    auto doc = new tinyxml2::XMLDocument();
+
+    doc->InsertEndChild(elementToXMLElement(shared_from_this(), doc));
+
+    tinyxml2::XMLPrinter printer;
+    doc->Print(&printer);
+
+    std::string output = printer.CStr();
+
+    delete doc;
+
+    // Now save the file
+    // TODO: Save to better place, in a better way
+    std::ofstream file;
+    file.open(Engine::Res::ResourceManager::getDirname() + filename);
+    file << output;
+    file.close();
+}
+
+// I accidentally coded this really weirdly
+tinyxml2::XMLElement* Element::elementToXMLElement(std::shared_ptr<Element> ele, tinyxml2::XMLDocument* doc)
+{
+    ele->onSave();
+    auto new_ele = doc->NewElement(ele->getTagName().c_str());
+
+    for (auto i = ele->attributes.begin(); i != ele->attributes.end(); i++)
+    {
+        if (std::get_if<int>(&i->second))
+        {
+            new_ele->SetAttribute(i->first.c_str(), std::get<int>(i->second));
+        }
+        else if (std::get_if<float>(&i->second))
+        {
+            new_ele->SetAttribute(i->first.c_str(), std::get<float>(i->second));
+        }
+        // else if (std::get_if<bool>(&i->second))
+        // {
+        //     new_ele->SetAttribute(i->first.c_str(), std::get<bool>(i->second));
+        // }
+        else if (std::get_if<std::string>(&i->second))
+        {
+            new_ele->SetAttribute(i->first.c_str(), std::get<std::string>(i->second).c_str());
+        }
+    }
+
+    if (ele->getId() != "")
+    {
+        new_ele->SetAttribute("id", ele->getId().c_str());
+    }
+
+    std::string classes = "";
+    for (int i = 0; i < ele->classList.classes.size(); i++) 
+    {
+        classes += ele->classList.classes[i];
+        if (i != ele->classList.classes.size()-1)
+        {
+            classes += " ";
+        }
+    }
+
+    for (int i = 0; i < ele->children.size(); i ++) 
+    {
+        new_ele->InsertEndChild(elementToXMLElement(ele->children[i], doc));
+    }
+
+    return new_ele;
+}
+
