@@ -22,13 +22,9 @@ namespace Engine {
                 std::string text = "";
             public:
                 ShaderResource(): text("") {};
-                virtual void loadFile(std::shared_ptr<std::ifstream> data)
+                virtual void loadFile(std::shared_ptr<std::stringstream> data)
                 {
-                    std::stringstream ss;
-                    ss << data->rdbuf();
-                    // data->close();
-
-                    text = ss.str();
+                    text = data->str();
                 }
 
                 std::string getText() const {

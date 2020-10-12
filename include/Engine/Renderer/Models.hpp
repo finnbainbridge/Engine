@@ -6,18 +6,27 @@
 #include "Engine/Res.hpp"
 #include "glm/fwd.hpp"
 #include <cstdlib>
+#include <utility>
 
 
 namespace Engine
 {
     namespace Models
     {
+        struct _MeshFile
+        {
+            glm::uint32 version;
+            glm::uint32 num_vertices;
+            glm::uint32 num_indices;
+        };
+
         class MeshResource: Res::IResource
         {
             private:
                 std::vector<glm::float32> vertices;
                 std::vector<glm::uint32> indices;
             public:
+                // TODO: Compression, once I don't have to debug this anymore
                 const glm::uint32 file_format_version = 1;
                 MeshResource()
                 {
@@ -46,55 +55,9 @@ namespace Engine
                     indices = arg;
                 }
 
-                virtual void loadFile(std::shared_ptr<std::ifstream> data)
-                {
-                    glm::uint32 format_version, vertices_len, indices_len;
+                virtual void loadFile(std::shared_ptr<std::stringstream> data);
 
-                    // Make sure this is actually a version we can read
-                    data->read((char *)&format_version, sizeof(glm::uint32));
-                    LOG_ASSERT_MESSAGE_FATAL(format_version != file_format_version, "Cannot load Mesh: File format is wrong. Please re-import your assets");
-
-                    // Find length of verticies
-                    data->read((char *)&vertices_len, sizeof(glm::uint32));
-
-                    LOG_ASSERT_MESSAGE(data->fail(), "Mesh loader: Failed to load file");
-
-                    // Allocate memory for vertex data, then fill it from the file
-                    glm::float32 *vertex_data = (glm::float32*)malloc(vertices_len * sizeof(glm::float32) * 8);
-
-                    // Read in from file
-                    data->read((char *)vertex_data, vertices_len * sizeof(glm::float32) * 8);
-                    
-                    // Convert to vector and save
-                    vertices = std::vector<glm::float32>(vertex_data, vertex_data + vertices_len*8);
-
-                    LOG_ASSERT_MESSAGE(data->fail(), "Mesh loader: Failed to load vertices");
-
-                    // Now do the same thing, but with indices
-
-                    // Find length of indices
-                    data->read((char *)&indices_len, sizeof(glm::uint32));
-
-                    LOG_ASSERT_MESSAGE(data->fail(), "Mesh loader: Failed to load file");
-
-                    // Allocate memory for vertex data, then fill it from the file
-                    glm::uint32 *index_data = (glm::uint32*)malloc(vertices_len * sizeof(glm::uint32));
-
-                    // Read in from file
-                    data->read((char *)index_data, indices_len * sizeof(glm::uint32));
-                    
-                    // Convert to vector and save
-                    indices = std::vector<glm::uint32>(index_data, index_data + indices_len);
-
-                    LOG_ASSERT_MESSAGE(data->fail(), "Mesh loader: Failed to load indices");
-
-                    // Cleanup...
-                    delete vertex_data;
-                    delete index_data;
-                    // And we're done!
-                }
-
-                // TODO: Saving
+                virtual void saveFile(std::string filename);
         };
     }
 }

@@ -18,6 +18,8 @@ add_library(Engine OBJECT ${GLAD_SOURCE} include/Engine/Engine.hpp include/Engin
             include/Engine/NKAPI.hpp
             # include/nuklear/nuklear.h
             lib/tinyxml2/tinyxml2.cpp
+            lib/lz4/lz4_all.c
+            lib/lz4/xxhash.c
             include/Engine/Log.hpp
             src/DevTools/log.cpp
              src/res.cpp src/engine.cpp src/DOM/dom.cpp src/threading.cpp src/renderer/Amber/amber.cpp
@@ -50,7 +52,7 @@ if (EMSCRIPTEN)
 
     # TODO: change this
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} --preload-file ../shaders")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O0 -s USE_WEBGL2=1 -s USE_GLFW=3 -s DISABLE_EXCEPTION_CATCHING=0")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O0 -s USE_WEBGL2=1 -s USE_GLFW=3 -s DISABLE_EXCEPTION_CATCHING=0 -s ALLOW_MEMORY_GROWTH=1")
 endif()
 
 target_link_libraries(Engine PRIVATE glfw)

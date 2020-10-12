@@ -200,12 +200,15 @@ int DevToolsTree::recursiveTreeRender(std::shared_ptr<DOM::Element> element, int
     if (worked)
     {
         auto buttons = element->getDevToolsButtons();
-        nk_layout_row_dynamic(NKAPI::ctx, 20, buttons.size());
-        for (std::map<std::string, std::function<void()>>::iterator it = buttons.begin(); it != buttons.end(); it++)
+        if (buttons.size() > 0)
         {
-            if (nk_button_label(NKAPI::ctx, it->first.c_str()))
+            nk_layout_row_dynamic(NKAPI::ctx, 20, buttons.size());
+            for (std::map<std::string, std::function<void()>>::iterator it = buttons.begin(); it != buttons.end(); it++)
             {
-                it->second();
+                if (nk_button_label(NKAPI::ctx, it->first.c_str()))
+                {
+                    it->second();
+                }
             }
         }
     }

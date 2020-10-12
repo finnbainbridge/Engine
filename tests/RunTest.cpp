@@ -1,3 +1,5 @@
+#include "Engine/Log.hpp"
+#include "Engine/Res.hpp"
 #include <iostream>
 #include <string>
 #define ENGINE_NO_THREADING
@@ -35,6 +37,7 @@ TestElement::~TestElement()
 int main(int argc, char const *argv[])
 {
     Engine::Threading::startThreads();
+    Engine::Res::ResourceManager::start(argc, argv);
     auto document = std::make_shared<Engine::Document>();
     document->setup();
 
@@ -81,6 +84,15 @@ int main(int argc, char const *argv[])
     document->tick(1);
     document->destroy();
     Engine::Threading::cleanup();
+
+    // Now let's do some filing!
+    // It's more exiting than it sounds
+
+    auto res = std::make_shared<Engine::Res::TextResource>();
+    res->setText("Hello compression!");
+    Engine::Res::ResourceManager::save("shaders/test.lz4", res, true);
+    auto new_res = Engine::Res::ResourceManager::load<Engine::Res::TextResource>("shaders/test.lz4", true);
+    LOG_INFO(new_res->getText());
 
     return 0;
 }
