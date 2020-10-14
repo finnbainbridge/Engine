@@ -26,6 +26,12 @@ namespace Engine {
                 virtual void loadFile(std::shared_ptr<std::stringstream> data) {};
                 static FileType file_type;
 
+                /*
+                "Current" filename of this resource. This is the filename it was last loaded from/saved to.
+                If it hasn't been saved, nor loaded, this will be ""
+                */
+                std::string fname = "";
+
                 virtual void saveFile(std::shared_ptr<std::stringstream> file)
                 {
 
@@ -81,6 +87,7 @@ namespace Engine {
                 template<typename res_t>
                 static std::shared_ptr<res_t> load(std::string filename, bool _decompress = false, FileType file_type = FileType::text, bool force_new = false)
                 {
+                    LOG_ASSERT_MESSAGE_FATAL(filename == "", "Filename must exist");
                     std::shared_ptr<res_t> ptr = std::dynamic_pointer_cast<res_t>(getCachedRes(filename));
 
                     if (force_new || ptr == nullptr)
@@ -127,12 +134,14 @@ namespace Engine {
 
                     LOG_ASSERT_MESSAGE_FATAL(ptr == nullptr, "Resource loading failed both badly, and inexplicably");
 
+                    ptr->fname = filename;
                     return ptr;
                 }
 
                 // Saves a resource to the given filename
                 static void save(std::string filename, std::shared_ptr<IResource> resource, bool _compress = false, FileType file_type = FileType::text)
                 {
+                    LOG_ASSERT_MESSAGE_FATAL(filename == "", "Filename must exist");
                     std::shared_ptr<std::stringstream> ss = std::make_shared<std::stringstream>();
                     resource->saveFile(ss);
 
@@ -167,6 +176,8 @@ namespace Engine {
                     // Write it to the file
                     file.write(memblock, size);
                     file.close();
+
+                    resource->fname = filename;
 
                     delete memblock;
                 }

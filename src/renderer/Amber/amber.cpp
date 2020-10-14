@@ -6,6 +6,7 @@
 #include "glm/fwd.hpp"
 #include "glm/gtc/type_ptr.hpp"
 #include "glm/matrix.hpp"
+#include <algorithm>
 #include <cstddef>
 #include <exception>
 #include <iostream>
@@ -425,17 +426,52 @@ void AmberShaderProgram::destroy()
     glDeleteProgram(handle);
 }
 
+// Shader program caching
+struct CachedShaders
+{
+    std::shared_ptr<AmberShaderProgram> program;
+    std::shared_ptr<ShaderResource> vert;
+    std::shared_ptr<ShaderResource> frag;
+
+    bool friend operator == (const CachedShaders& a, const CachedShaders& b)
+    {
+        return a.vert == b.vert && a.frag == b.frag;
+    }
+};
+
+std::vector<CachedShaders> shader_cache;
+
 std::shared_ptr<ShaderProgram> Amber::addShaderProgram(std::shared_ptr<ShaderResource> vert, std::shared_ptr<ShaderResource> frag)
 {
-    auto program = std::make_shared<AmberShaderProgram>();
-    program->loadShaders(vert, frag);
-    shaders.push_back(program);
+    CachedShaders new_shaders;
+    new_shaders.vert = vert;
+    new_shaders.frag = frag;
+
+    auto cached = std::find(shader_cache.begin(), shader_cache.end(), new_shaders);
+    std::shared_ptr<AmberShaderProgram> program;
+
+    if (cached == shader_cache.end())
+    {
+        // Create and add new shader
+        program = std::make_shared<AmberShaderProgram>();
+        program->loadShaders(vert, frag);
+        shaders.push_back(program);
+
+        // Add it to the cache
+        new_shaders.program = program;
+        shader_cache.push_back(new_shaders);
+    }
+    else
+    {
+        program = cached->program;
+    }
+
     return program;
 }
 
-void AmberRenderObject::setMeshData(std::vector<glm::vec3> position, std::vector<glm::vec3> normals, std::vector<glm::vec2> texture_coords, std::vector<glm::uint32> indiciez)
+void AmberRenderObject::setMeshData(std::vector<glm::float32> vertices, std::vector<glm::uint32> indiciez)
 {
-    RenderObject::setMeshData(position, normals, texture_coords, indiciez);
+    RenderObject::setMeshData(vertices, indiciez);
 
     // Make sure we're on the right thread
     Amber::makeCurrent();
@@ -463,7 +499,7 @@ void AmberRenderObject::setMeshData(std::vector<glm::vec3> position, std::vector
     // Add the indicies
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo);
     // std::cout << glGetError() << std::endl;
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, indicies.size() * sizeof(glm::uint32), &indicies[0], GL_STATIC_DRAW);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(glm::uint32), &indices[0], GL_STATIC_DRAW);
     // std::cout << glGetError() << std::endl;
 
     // Now, we tell OpenGL where all the data actually _is_
@@ -493,7 +529,7 @@ void AmberRenderObject::draw()
     // std::cout << glGetError() << std::endl;
     glBindVertexArray(vao);
     // std::cout << glGetError() << std::endl;
-    glDrawElements(GL_TRIANGLES, indicies.size(), GL_UNSIGNED_INT, (void*) 0);
+    glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_INT, (void*) 0);
     // std::cout << glGetError() << std::endl;
     glBindVertexArray(0);
     // std::cout << glGetError() << std::endl;

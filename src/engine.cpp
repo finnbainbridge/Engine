@@ -61,6 +61,17 @@ void Engine::Document::addElement(std::string name, std::shared_ptr<DOM::Element
     element_classes[name] = type;
 }
 
+bool is_int(const std::string & s)
+{
+
+    return (s.find_first_not_of( "-0123456789" ) == std::string::npos);
+}
+
+bool is_float(const std::string & s)
+{
+    return (s.find_first_not_of( ".0123456789" ) == std::string::npos);
+}
+
 std::shared_ptr<Engine::DOM::Element> Engine::Document::xmlElementToElement(XMLElement* node)
 {
     std::shared_ptr<DOM::Element> element;
@@ -85,27 +96,21 @@ std::shared_ptr<Engine::DOM::Element> Engine::Document::xmlElementToElement(XMLE
     {
         DOM::AttrVariant value = "";
         std::string temp_v = child->Value();
-        bool is_string = true;
-        // Float
-        try {
-            value = std::stof(temp_v);
-        } catch (std::exception) {
-            // Fail
-            is_string = false;
-        }
 
         // Int
-        try {
+        if (is_int(temp_v)) {
             value = std::stoi(temp_v);
-        } catch (std::exception) {
-            // Fail
-            is_string = false;
+        }
+
+        // Float
+        else if (is_float(temp_v)) {
+            value = std::stof(temp_v);
         }
 
         // String
-        if (is_string)
+        else
         {
-            value = child->Value();
+            value = std::string(child->Value());
         }
 
         element->setAttribute(child->Name(), value);

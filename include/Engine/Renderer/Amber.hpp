@@ -50,7 +50,8 @@ namespace Engine {
 
             public:
                 AmberRenderObject(): vao(0), vbo(0), ibo(0) {};
-                virtual void setMeshData(std::vector<glm::vec3> position, std::vector<glm::vec3> normals, std::vector<glm::vec2> texture_coords, std::vector<glm::uint32> indiciez);
+                // TODO: Re-add setMeshDataManuel
+                virtual void setMeshData(std::vector<glm::float32> vertices, std::vector<glm::uint32> indiciez);
                 virtual void draw();
                 virtual void destroy();
         };

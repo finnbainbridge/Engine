@@ -2,6 +2,7 @@
 #define ENGINE_ELEMENT3D_H
 
 #include "Engine/Engine.hpp"
+#include "Engine/Renderer/Models.hpp"
 #include "Engine/Renderer/Renderer.hpp"
 #include "glm/fwd.hpp"
 #include <glm/glm.hpp>
@@ -76,6 +77,8 @@ namespace Engine
                 // Scales this Element3D and all it's children by the given scaler for each axis
                 void scale(glm::vec3 scaler);
 
+                void setTransform(glm::mat4 trans);
+
                 // This tells all this element's children to update their positions. This should be called after 
                 // you modify the transformation matricies yourself
                 void callChildUpdate();
@@ -113,6 +116,34 @@ namespace Engine
                 void setMesh(std::vector<glm::vec3> points, std::vector<glm::vec3> normals, std::vector<glm::vec2> tex_coords, std::vector<glm::uint32> indicies, std::shared_ptr<Renderer::ShaderProgram> shaders);
 
                 virtual void render(float delta);
+        };
+
+        /*
+        The element that is used to display most things. MeshElement3D is capable of rendering 3d models
+        */
+        class MeshElement3D: public Element3D
+        {
+            private:
+                bool has_data = false;
+            protected:
+                std::shared_ptr<Renderer::RenderObject> render_object;
+                std::shared_ptr<Models::MeshResource> resource;
+                std::shared_ptr<Renderer::ShaderProgram> shaders;
+            public:
+                MeshElement3D(std::shared_ptr<Document> doc);
+                virtual void init();
+
+                void setResource(std::shared_ptr<Models::MeshResource> res);
+
+                // Sets the reource of the mesh without actually adding an openhl object.
+                // Intended for use when building scenes offline
+                void _setResourceDry(std::shared_ptr<Models::MeshResource> res);
+
+                void setShaders(std::shared_ptr<Renderer::ShaderProgram> shaders);
+                virtual void render(float delta);
+
+                virtual void onSave();
+                virtual void onLoad();
         };
 
         // The extension class

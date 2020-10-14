@@ -8,6 +8,7 @@
 // #include "Engine/Threading.hpp"
 #include "Engine/Input.hpp"
 #include "Engine/Log.hpp"
+#include "Engine/Renderer/Models.hpp"
 #include "Engine/Renderer/Renderer.hpp"
 #include "Engine/Renderer/Amber.hpp"
 #include "Engine/Res.hpp"
@@ -51,18 +52,22 @@ void TriangleElement3D::process(float delta)
 // Globals
 
 std::shared_ptr<Engine::E3D::CameraElement3D> camera;
+std::shared_ptr<Engine::Document> document;
 
 // Render function
 void render(float delta)
 {
     // LOG_ASSERT(true);
+    // Rotate the model
+    std::dynamic_pointer_cast<Engine::E3D::Element3D>(document->body->getElementsByTagName("element3d", true)[1])->rotate(3.14 * delta, glm::vec3(0, 1, 0));
+
 }
 
 int main(int argc, char const* argv[])
 {
     LOG_INFO("Running RenderTest...");
     Engine::Res::ResourceManager::start(argc, argv);
-    auto document = Engine::Document::createDocument();
+    document = Engine::Document::createDocument();
     auto renderer = std::make_shared<Engine::Renderer::Amber>(document);
     renderer->createWindow(1024, 866, "Test");
 
@@ -91,6 +96,10 @@ int main(int argc, char const* argv[])
     // tri_element2->translate(glm::vec3(0,0,-1));
     // tri_element2->scale(glm::vec3(0.5, 0.5, 0.5));
 
+    // auto meshelement = std::make_shared<Engine::E3D::MeshElement3D>(document);
+    // meshelement->setResource(Engine::Res::ResourceManager::load<Engine::Models::MeshResource>("assets/green_GreenV2.1_retopo.005.emesh", true));
+    // document->body->appendChild(meshelement);
+
     // Camera
     // camera = std::make_shared<Engine::DevTools::OrbitCamera3D>(document);
     camera = std::make_shared<Engine::E3D::CameraElement3D>(document);
@@ -102,7 +111,7 @@ int main(int argc, char const* argv[])
     // tri_element->saveToFile("/shaders/save_test.xml");
 
     // Test XML loading
-    document->body->appendChild(document->loadFromFile("shaders/save_test.xml"));
+    document->body->appendChild(document->loadFromFile("assets/jmodl.xml"));
 
     renderer->setCamera(camera);
 

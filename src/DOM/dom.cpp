@@ -339,11 +339,9 @@ void Element::saveToFile(std::string filename)
     delete doc;
 
     // Now save the file
-    // TODO: Save to better place, in a better way
-    std::ofstream file;
-    file.open(Engine::Res::ResourceManager::getDirname() + filename);
-    file << output;
-    file.close();
+    auto res = std::make_shared<Res::TextResource>();
+    res->setText(output);
+    Res::ResourceManager::save(filename, res);
 }
 
 // I accidentally coded this really weirdly

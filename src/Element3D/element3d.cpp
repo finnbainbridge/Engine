@@ -85,6 +85,14 @@ void Element3D::scale(glm::vec3 scaler)
     callChildUpdate();
 }
 
+void Element3D::setTransform(glm::mat4 transfor)
+{
+    transform_lock.lock();
+    transform = transfor;
+    transform_lock.unlock();
+    callChildUpdate();
+}
+
 void Element3D::updateGlobalTransform()
 {
     // Find parent
@@ -236,7 +244,7 @@ void ManualMeshElement3D::setMesh(std::vector<glm::vec3> points, std::vector<glm
     }
 
     render_object = document->renderer->addRenderObject();
-    render_object->setMeshData(points, points, tex_coords, indicies);
+    render_object->setMeshDataManual(points, points, tex_coords, indicies);
     render_object->setShaderProgram(shaders);
 }
 
@@ -256,4 +264,5 @@ void E3DExtension::start(std::shared_ptr<Document> doc)
     doc->addElement("element3d", std::make_shared<DOM::ElementClassFactory<Element3D>>());
     doc->addElement("camera3d", std::make_shared<DOM::ElementClassFactory<CameraElement3D>>());
     doc->addElement("manualmesh3d", std::make_shared<DOM::ElementClassFactory<ManualMeshElement3D>>());
+    doc->addElement("mesh3d", std::make_shared<DOM::ElementClassFactory<MeshElement3D>>());
 }

@@ -1,5 +1,7 @@
 #include "Engine/Log.hpp"
+#include "Engine/Renderer/Models.hpp"
 #include "Engine/Res.hpp"
+#include "glm/fwd.hpp"
 #include <iostream>
 #include <string>
 #define ENGINE_NO_THREADING
@@ -93,6 +95,23 @@ int main(int argc, char const *argv[])
     Engine::Res::ResourceManager::save("shaders/test.lz4", res, true);
     auto new_res = Engine::Res::ResourceManager::load<Engine::Res::TextResource>("shaders/test.lz4", true);
     LOG_INFO(new_res->getText());
+
+    // And now we do the same, but with meshes!
+    auto mres = std::make_shared<Engine::Models::MeshResource>();
+    mres->setVertices(std::vector<glm::float32> {1, 1, 0, 0, 0, 0, 0, 0,
+                                            0, 1, 0, 0, 0, 0, 0, 0,
+                                            1, 0, 0, 0, 0, 0, 0, 0});
+    mres->setIndices(std::vector<glm::uint32> {0, 1, 2});
+
+    Engine::Res::ResourceManager::save("shaders/test.mesh", mres, true);
+
+    auto new_mres = Engine::Res::ResourceManager::load<Engine::Models::MeshResource>("shaders/test.mesh", true);
+
+    for (int i = 0; i < new_mres->getVertices().size(); i++)
+    {
+        std::cout << new_mres->getVertices()[i] << " ";
+    }
+    std::cout << std::endl;
 
     return 0;
 }

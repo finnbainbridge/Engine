@@ -10,6 +10,7 @@
 #include <iostream>
 #include <memory>
 #include <sstream>
+#include <vector>
 
 #include "Engine/Input.hpp"
 
@@ -49,7 +50,7 @@ namespace Engine {
         class RenderObject
         {
             public:
-                RenderObject(): shader_program(nullptr), global_transform(), local_transform(), vertex_data(), indicies() {};
+                RenderObject(): shader_program(nullptr), global_transform(), local_transform(), vertex_data(), indices() {};
                 glm::mat4 global_transform;
                 glm::mat4 local_transform;
 
@@ -61,11 +62,23 @@ namespace Engine {
                 std::vector<glm::float32> vertex_data;
 
                 // Indicies
-                std::vector<glm::uint32> indicies;
+                std::vector<glm::uint32> indices;
 
-                virtual void setMeshData(std::vector<glm::vec3> position, std::vector<glm::vec3> normals, std::vector<glm::vec2> texture_coords, std::vector<glm::uint32> indiciez)
+                /*
+                Fill up the RenderObject the way the data is really stores. 
+                Vertices is a vector with 8 elements per vertex: X Y Z NX NY NZ TX TY. 
+                Indicies is a vector of indices
+                */
+                virtual void setMeshData(std::vector<glm::float32> vertices, std::vector<glm::uint32> indicez)
                 {
-                    indicies = indiciez;
+                    indices = indicez;
+                    vertex_data = vertices;
+
+                }
+
+                virtual void setMeshDataManual(std::vector<glm::vec3> position, std::vector<glm::vec3> normals, std::vector<glm::vec2> texture_coords, std::vector<glm::uint32> indiciez)
+                {
+                    indices = indiciez;
 
                     if (position.size() != normals.size() && normals.size() != texture_coords.size())
                     {
@@ -87,6 +100,8 @@ namespace Engine {
                         vertex_data.push_back(texture_coords[i].y);
                     }
                 }
+
+
 
                 virtual void setShaderProgram(std::shared_ptr<ShaderProgram> shaders) {shader_program = shaders;};
 

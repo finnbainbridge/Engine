@@ -10,6 +10,12 @@ if (EMSCRIPTEN)
     set(GLAD_SOURCE )
 endif()
 
+if (NOT EMSCRIPTEN)
+    set(ENGINE_MAKE_TOOLS ON)
+else()
+    set(ENGINE_MAKE_TOOLS OFF)
+endif()
+
 include(CTest)
 enable_testing()
 # TODO: Clean up this
@@ -24,7 +30,8 @@ add_library(Engine OBJECT ${GLAD_SOURCE} include/Engine/Engine.hpp include/Engin
             src/DevTools/log.cpp
              src/res.cpp src/engine.cpp src/DOM/dom.cpp src/threading.cpp src/renderer/Amber/amber.cpp
              src/Element3D/element3d.cpp src/DevTools/orbitcam.cpp
-             src/DevTools/devtoolsui.cpp
+             src/DevTools/devtoolsui.cpp src/Element3D/models.cpp
+             src/Element3D/meshelement3d.cpp
             )
 
 target_include_directories(Engine PUBLIC include)
@@ -84,6 +91,18 @@ make_test(IdGetTest tests/IdGetTest.cpp)
 make_test(RunTest tests/RunTest.cpp)
 
 make_test(RenderTest tests/RenderTest.cpp)
+
+if (ENGINE_MAKE_TOOLS)
+    set (CMAKE_CXX_STANDARD 17)
+    add_executable(EngineTools src/tools/main.cpp src/tools/assimp_importer.cpp $<TARGET_OBJECTS:Engine>)
+    find_package(Threads REQUIRED)
+    target_link_libraries(EngineTools PRIVATE Threads::Threads)
+    target_link_libraries(EngineTools PRIVATE glfw)
+    target_link_libraries(EngineTools PRIVATE GL)
+    target_link_libraries(EngineTools PRIVATE dl)
+    add_subdirectory(lib/assimp)
+    target_link_libraries(EngineTools PUBLIC assimp)
+endif()
 
 set(CPACK_PROJECT_NAME ${PROJECT_NAME})
 set(CPACK_PROJECT_VERSION ${PROJECT_VERSION})

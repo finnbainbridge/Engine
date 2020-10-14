@@ -18,15 +18,15 @@ namespace Engine
             glm::uint32 version;
             glm::uint32 num_vertices;
             glm::uint32 num_indices;
+            glm::uint32 size;
         };
 
-        class MeshResource: Res::IResource
+        class MeshResource: public Res::IResource
         {
             private:
                 std::vector<glm::float32> vertices;
                 std::vector<glm::uint32> indices;
             public:
-                // TODO: Compression, once I don't have to debug this anymore
                 const glm::uint32 file_format_version = 1;
                 MeshResource()
                 {
@@ -57,7 +57,7 @@ namespace Engine
 
                 virtual void loadFile(std::shared_ptr<std::stringstream> data);
 
-                virtual void saveFile(std::string filename);
+                virtual void saveFile(std::shared_ptr<std::stringstream> data);
         };
     }
 }
