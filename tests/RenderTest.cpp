@@ -59,7 +59,7 @@ void render(float delta)
 {
     // LOG_ASSERT(true);
     // Rotate the model
-    std::dynamic_pointer_cast<Engine::E3D::Element3D>(document->body->getElementsByTagName("element3d", true)[1])->rotate(3.14 * delta, glm::vec3(0, 1, 0));
+    std::dynamic_pointer_cast<Engine::E3D::Element3D>(document->body->getElementsByTagName("element3d", true)[1])->rotate(1.5 * delta, glm::vec3(0, 1, 0));
 
 }
 

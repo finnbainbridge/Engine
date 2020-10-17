@@ -30,10 +30,10 @@ void MeshResource::loadFile(std::shared_ptr<std::stringstream> data)
     vertices = std::vector<glm::float32>(new_vertices, new_vertices + header.num_vertices * 8);
 
     // Now load indices
-    glm::uint32* new_indices = new glm::uint32[header.num_indices * 8];
-    data->read((char *) new_indices, header.num_indices * 8 * sizeof(glm::uint32));
+    glm::uint32* new_indices = new glm::uint32[header.num_indices];
+    data->read((char *) new_indices, header.num_indices * sizeof(glm::uint32));
 
-    indices = std::vector<glm::uint32>(new_indices, new_indices + header.num_indices * 8);
+    indices = std::vector<glm::uint32>(new_indices, new_indices + header.num_indices);
 
     // And we're done!
     // Now we cleanup

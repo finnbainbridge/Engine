@@ -14,7 +14,7 @@
 #include <filesystem>
 #include <memory>
 
-std::string fname;
+std::string fname, old_fname;
 
 std::shared_ptr<Engine::Document> document;
 
@@ -147,8 +147,8 @@ void create_scene(const aiScene* scene)
     // RECURSION!!!
     auto val = convert_node(scene, scene->mRootNode, nullptr);
 
-    LOG_INFO("Saving to file: " + fname + ".xml");
-    val->saveToFile(fname + ".xml");
+    LOG_INFO("Saving to file: " + old_fname + ".xml");
+    val->saveToFile(old_fname + ".xml");
     LOG_INFO("Done");
 }
 
@@ -159,6 +159,10 @@ void assimp_import(std::string filename)
 
     size_t lastindex = filename.find_last_of("."); 
     fname = filename.substr(0, lastindex); 
+    old_fname = fname;
+
+    std::filesystem::create_directory(Engine::Res::ResourceManager::getDirname() + "/" + fname + "_data");
+    fname = fname + "_data" + "/" + std::filesystem::path(fname).stem().string();
 
     LOG_INFO("Loading file: " + Engine::Res::ResourceManager::getDirname() + "/" + filename);
 

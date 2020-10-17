@@ -35,6 +35,10 @@ namespace Engine {
 
                 virtual void destroy();
 
+                virtual void setUniform(const std::string label, const float& value);
+                virtual void setUniform(const std::string label, const int& value);
+                virtual void setUniform(const std::string label, const bool& value);
+
                 virtual void setUniform(const std::string label, const glm::vec2& value);
                 virtual void setUniform(const std::string label, const glm::vec3& value);
                 virtual void setUniform(const std::string label, const glm::vec4& value);

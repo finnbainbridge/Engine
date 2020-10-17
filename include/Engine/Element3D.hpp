@@ -118,6 +118,25 @@ namespace Engine
                 virtual void render(float delta);
         };
 
+        struct MeshMaterial
+        {
+            // Colour of the material (will be overriden by textures)
+            glm::vec3 diffuse;
+
+            // Ambient colour
+            glm::vec3 ambient;
+
+            // Specular
+            glm::vec3 specular;
+
+            // Shininess
+            float shininess;
+
+            // Tells the renderer if it should light tie inside of the shape as well.
+            // Needed for shapes with holes in them
+            // bool two_sided;
+        };
+
         /*
         The element that is used to display most things. MeshElement3D is capable of rendering 3d models
         */
@@ -129,6 +148,8 @@ namespace Engine
                 std::shared_ptr<Renderer::RenderObject> render_object;
                 std::shared_ptr<Models::MeshResource> resource;
                 std::shared_ptr<Renderer::ShaderProgram> shaders;
+
+                MeshMaterial material;
             public:
                 MeshElement3D(std::shared_ptr<Document> doc);
                 virtual void init();
@@ -138,6 +159,16 @@ namespace Engine
                 // Sets the reource of the mesh without actually adding an openhl object.
                 // Intended for use when building scenes offline
                 void _setResourceDry(std::shared_ptr<Models::MeshResource> res);
+
+                void setMaterial(MeshMaterial mat)
+                {
+                    material = mat;
+                };
+
+                MeshMaterial getMaterial() const
+                {
+                    return material;
+                };
 
                 void setShaders(std::shared_ptr<Renderer::ShaderProgram> shaders);
                 virtual void render(float delta);

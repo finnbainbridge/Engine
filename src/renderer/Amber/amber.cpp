@@ -420,6 +420,24 @@ void AmberShaderProgram::setUniform(const std::string name, const glm::mat4& v)
     glUniformMatrix4fv(loc, 1, GL_FALSE, glm::value_ptr(v));
 }
 
+void AmberShaderProgram::setUniform(const std::string name, const int& v)
+{
+    GLint loc = getUniformLocation(name);
+    glUniform1i(loc, v);
+}
+
+void AmberShaderProgram::setUniform(const std::string name, const float& v)
+{
+    GLint loc = getUniformLocation(name);
+    glUniform1f(loc, v);
+}
+
+void AmberShaderProgram::setUniform(const std::string name, const bool& v)
+{
+    GLint loc = getUniformLocation(name);
+    glUniform1i(loc, v);
+}
+
 void AmberShaderProgram::destroy()
 {
     LOG_INFO("Destroying shaders!");
@@ -561,12 +579,18 @@ void Amber::renderRenderObject(std::shared_ptr<RenderObject> model, glm::mat4 gl
 
     // Set uniforms
     // TODO: Do this in a more scalable way
-    
+    glm::mat4 trans = global_transform * local_transform;
+    glm::mat4 mv = camera->_getViewMatrix() * trans;
     model->shader_program->setUniform("projection", glm::perspective((float)0.8726646, (float)screen_width/screen_height, 0.1f, 100.0f));
     model->shader_program->setUniform("view", camera->_getViewMatrix());
-    model->shader_program->setUniform("local_transform", local_transform);
-    model->shader_program->setUniform("global_transform", global_transform);
+    model->shader_program->setUniform("transform", trans);
+    model->shader_program->setUniform("model_view", mv);
+    // model->shader_program->setUniform("normal_transform", glm::mat3(mv));
+    // model->shader_program->setUniform("normal_local", glm::mat3( glm::vec3(local_transform[0]), glm::vec3(local_transform[1]), glm::vec3(local_transform[2])));
+    // model->shader_program->setUniform("normal_global", glm::mat3( glm::vec3(global_transform[0]), glm::vec3(global_transform[1]), glm::vec3(global_transform[2])));
 
+    // model->shader_program->setUniform("normal_local", glm::mat3(local_transform));
+    // model->shader_program->setUniform("normal_global", glm::mat3(global_transform));
 
     model->draw();
 }
