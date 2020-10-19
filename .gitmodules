@@ -1,3 +1,18 @@
 [submodule "Engine/lib/glfw"]
 	path = Engine/lib/glfw
 	url = https://github.com/glfw/glfw.git
+[submodule "third_party/glfw"]
+	path = third_party/glfw
+	url = https://github.com/glfw/glfw.git
+[submodule "third_party/term-colors"]
+	path = third_party/term-colors
+	url = https://github.com/pniedzielski/term-colors.git
+[submodule "third_party/tinyxml2"]
+	path = third_party/tinyxml2
+	url = https://github.com/leethomason/tinyxml2.git
+[submodule "third_party/assimp"]
+	path = third_party/assimp
+	url = https://github.com/assimp/assimp.git
+[submodule "third_party/lz4"]
+	path = third_party/lz4
+	url = https://github.com/lz4/lz4.git
