@@ -1,15 +1,15 @@
 [submodule "subprojects/glfw"]
 	path = subprojects/glfw
 	url = https://github.com/glfw/glfw.git
-[submodule "subprojects/term-colors"]
-	path = subprojects/term-colors
-	url = https://github.com/pniedzielski/term-colors.git
-[submodule "subprojects/tinyxml2_lib/tinyxml2"]
-	path = subprojects/tinyxml2_lib/tinyxml2
-	url = https://github.com/leethomason/tinyxml2.git
 [submodule "subprojects/assimp"]
 	path = subprojects/assimp
 	url = https://github.com/assimp/assimp.git
+[submodule "subprojects/tinyxml2_lib/tinyxml2"]
+	path = subprojects/tinyxml2_lib/tinyxml2
+	url = https://github.com/leethomason/tinyxml2.git
 [submodule "subprojects/lz4_lib/lz4"]
 	path = subprojects/lz4_lib/lz4
 	url = https://github.com/lz4/lz4.git
+[submodule "subprojects/termcolors_lib/term-colors"]
+	path = subprojects/termcolors_lib/term-colors
+	url = https://github.com/pniedzielski/term-colors.git
