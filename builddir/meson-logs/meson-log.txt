@@ -1,0 +1,11 @@
+Build started at 2020-10-18T18:58:09.195697
+Main binary: /usr/bin/python3
+Build Options: -Dbuildtype=debug
+Python system: Linux
+The Meson build system
+Version: 0.53.2
+Source dir: /home/finn/cpp/opengl/Engine/src
+Build dir: /home/finn/cpp/opengl/Engine/src/builddir
+Build type: native build
+
+ERROR: No statements in code.
