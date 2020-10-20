@@ -1,4 +1,5 @@
-project('Engine', 'c', 'cpp', default_options : ['c_std=c11', 'cpp_std=c++17'])
+project('Engine', 'c', 'cpp', default_options : ['c_std=c11', 'cpp_std=c++17','warning_level=0'])
+warning_level = 0
 
 
 # Dependencies
@@ -11,15 +12,15 @@ cmake = import('cmake')
 glfw_sub = cmake.subproject('glfw')
 glfw = glfw_sub.dependency('glfw')
 
-# GLM
-glm_sub = cmake.subproject('glm')
-glm = glm_sub.dependency('glm')
-
 # Meson dependencies
 
 # Glad
 glad_sub = subproject('glad')
 glad = glad_sub.get_variable('glad')
+
+# GLM
+glm_sub = subproject('glm_lib')
+glm = glm_sub.get_variable('glm')
 
 # KHR
 khr_inc = include_directories('subprojects/KHR')
@@ -36,6 +37,10 @@ tinyxml2 = tinyxml2_sub.get_variable('tinyxml2')
 # Nuklear
 nuklear_inc = include_directories('subprojects/nuklear')
 nuklear = declare_dependency(include_directories: nuklear_inc)
+
+# Term-colors
+termcolors_sub = subproject('termcolors_lib')
+termcolors = termcolors_sub.get_variable('termcolors')
 
 # Source code
 src = ['src/engine.cpp', 
@@ -61,6 +66,9 @@ engine_lib = library('Engine', src, version: '0.0.1',
                             glad,
                             khr,
                             lz4,
-                            tinyxml2])
+                            tinyxml2,
+                            termcolors,
+                            nuklear],
+            override_options : ['c_std=c11'])
 
 engine = declare_dependency(link_with : engine_lib, include_directories : engine_include)

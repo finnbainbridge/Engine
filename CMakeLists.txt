@@ -1,46 +1,28 @@
-cmake_minimum_required(VERSION 3.1.0)
-project(Engine VERSION 0.1.0)
+cmake_minimum_required(VERSION 3.10)
+
+project(Engine VERSION 1.0)
 
 set (CMAKE_CXX_STANDARD 17)
 set(THREADS_PREFER_PTHREAD_FLAG ON)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-set(GLAD_SOURCE include/glad/glad.h lib/glad/src/glad.c)
-if (EMSCRIPTEN)
-    set(GLAD_SOURCE )
-endif()
-
-if (NOT EMSCRIPTEN)
-    set(ENGINE_MAKE_TOOLS ON)
-else()
-    set(ENGINE_MAKE_TOOLS OFF)
-endif()
-
-include(CTest)
-enable_testing()
-# TODO: Clean up this
-add_library(Engine OBJECT ${GLAD_SOURCE} include/Engine/Engine.hpp include/Engine/Renderer/Renderer.hpp include/Engine/Renderer/Amber.hpp
-            include/Engine/Element3D.hpp include/Engine/DevTools.hpp
-            include/Engine/NKAPI.hpp
-            # include/nuklear/nuklear.h
-            lib/tinyxml2/tinyxml2.cpp
-            lib/lz4/lz4_all.c
-            lib/lz4/xxhash.c
-            include/Engine/Log.hpp
-            src/DevTools/log.cpp
-             src/res.cpp src/engine.cpp src/DOM/dom.cpp src/threading.cpp src/renderer/Amber/amber.cpp
-             src/Element3D/element3d.cpp src/DevTools/orbitcam.cpp
-             src/DevTools/devtoolsui.cpp src/Element3D/models.cpp
-             src/Element3D/meshelement3d.cpp
-            )
-
+add_library(Engine STATIC  src/engine.cpp   
+         src/res.cpp  
+         src/threading.cpp  
+         src/DevTools/devtoolsui.cpp  
+         src/DevTools/log.cpp  
+         src/DevTools/orbitcam.cpp  
+         src/DOM/dom.cpp  
+         src/Element3D/element3d.cpp  
+         src/Element3D/meshelement3d.cpp  
+         src/Element3D/models.cpp  
+         src/renderer/Amber/amber.cpp )
+        
 target_include_directories(Engine PUBLIC include)
 include_directories(include)
 
 find_package(Threads REQUIRED)
-target_link_libraries(Engine PRIVATE Threads::Threads)
-
-set_target_properties(Engine PROPERTIES VERSION ${PROJECT_VERSION})
+target_link_libraries(Engine PUBLIC Threads::Threads)
 
 
 if (NOT EMSCRIPTEN)
@@ -50,7 +32,13 @@ if (NOT EMSCRIPTEN)
     set(GLFW_BUILD_TESTS OFF CACHE BOOL "" FORCE)
     set(GLFW_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
 
-    add_subdirectory(lib/glfw)
+    add_subdirectory(subprojects/glfw)
+    
+    # GLAD
+    add_subdirectory(subprojects/glad)
+    
+    target_link_libraries(Engine PUBLIC glad)
+    target_link_libraries(Engine PUBLIC dl)
 endif()
 
 if (EMSCRIPTEN)
@@ -58,52 +46,33 @@ if (EMSCRIPTEN)
     set(CMAKE_EXECUTABLE_SUFFIX ".html")
 
     # TODO: change this
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} --preload-file ../shaders")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O0 -s USE_WEBGL2=1 -s USE_GLFW=3 -s DISABLE_EXCEPTION_CATCHING=0 -s ALLOW_MEMORY_GROWTH=1")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} --preload-file ${ENGINE_PACKAGE_FILES}")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O2 -s USE_WEBGL2=1 -s USE_GLFW=3 -s DISABLE_EXCEPTION_CATCHING=0 -s ALLOW_MEMORY_GROWTH=1")
 endif()
 
-target_link_libraries(Engine PRIVATE glfw)
-target_link_libraries(Engine PRIVATE GL)
+# Link glfw and gl
+target_link_libraries(Engine PUBLIC GL)
+target_link_libraries(Engine PUBLIC glfw)
 
-if (NOT EMSCRIPTEN)
-    target_link_libraries(Engine PRIVATE dl)
-endif()
+# Add other dependencies
 
-# SET(CMAKE_CXX_FLAGS_DEBUG_INIT "-g")
+# GLM
+add_subdirectory(subprojects/glm_lib)
+target_link_libraries(Engine PUBLIC glm)
+
+# LZ4
+add_subdirectory(subprojects/lz4_lib)
+target_link_libraries(Engine PUBLIC lz4)
 
 # Nuklear
-set_source_files_properties(include/nuklear/nuklear_glfw_gl3.h PROPERTIES COMPILE_FLAGS -fpermissive)
+add_subdirectory(subprojects/nuklear)
+target_link_libraries(Engine PUBLIC nuklear)
 
+# Term-colors
+add_subdirectory(subprojects/termcolors_lib)
+target_link_libraries(Engine PUBLIC termcolors)
 
-function(make_test test_name source)
-    set (CMAKE_CXX_STANDARD 17)
-    add_executable(${test_name} ${source} $<TARGET_OBJECTS:Engine>)
-    add_test(NAME ${test_name} COMMAND ${test_name})
-    find_package(Threads REQUIRED)
-    target_link_libraries(${test_name} PRIVATE Threads::Threads)
-    target_link_libraries(${test_name} PRIVATE glfw)
-    target_link_libraries(${test_name} PRIVATE GL)
-    target_link_libraries(${test_name} PRIVATE dl)
-endfunction(make_test)
+# Tinyxml2
+add_subdirectory(subprojects/tinyxml2_lib)
+target_link_libraries(Engine PUBLIC tinyxml2)
 
-make_test(test1 tests/test1.cpp)
-make_test(IdGetTest tests/IdGetTest.cpp)
-make_test(RunTest tests/RunTest.cpp)
-
-make_test(RenderTest tests/RenderTest.cpp)
-
-if (ENGINE_MAKE_TOOLS)
-    set (CMAKE_CXX_STANDARD 17)
-    add_executable(EngineTools src/tools/main.cpp src/tools/assimp_importer.cpp $<TARGET_OBJECTS:Engine>)
-    find_package(Threads REQUIRED)
-    target_link_libraries(EngineTools PRIVATE Threads::Threads)
-    target_link_libraries(EngineTools PRIVATE glfw)
-    target_link_libraries(EngineTools PRIVATE GL)
-    target_link_libraries(EngineTools PRIVATE dl)
-    add_subdirectory(lib/assimp)
-    target_link_libraries(EngineTools PUBLIC assimp)
-endif()
-
-set(CPACK_PROJECT_NAME ${PROJECT_NAME})
-set(CPACK_PROJECT_VERSION ${PROJECT_VERSION})
-include(CPack)

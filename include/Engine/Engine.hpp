@@ -1,7 +1,6 @@
 #ifndef ENGINE_H
 #define ENGINE_H
 
-#include "tinyxml2/tinyxml2.h"
 #ifdef __EMSCRIPTEN__
 #define ENGINE_NO_THREADING
 #endif
@@ -29,6 +28,7 @@
 namespace tinyxml2
 {
     class XMLElement;
+    class XMLDocument;
 }
 
 namespace Engine
