@@ -15,7 +15,7 @@
 
 #include <GLFW/glfw3.h>
 
-#include <glad/glad.h>
+// #include <glad/glad.h>
 
 enum nk_glfw_init_state{
     NK_GLFW3_DEFAULT=0,

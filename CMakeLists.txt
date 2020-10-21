@@ -2,9 +2,12 @@ cmake_minimum_required(VERSION 3.10)
 
 project(Engine VERSION 1.0)
 
-set (CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 17)
 set(THREADS_PREFER_PTHREAD_FLAG ON)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
+set(CMAKE_CXX_FLAGS_DEBUG "-g")
+set(CMAKE_CXX_FLAGS_RELEASE "-O2")
 
 add_library(Engine STATIC  src/engine.cpp   
          src/res.cpp  
@@ -38,21 +41,41 @@ if (NOT EMSCRIPTEN)
     add_subdirectory(subprojects/glad)
     
     target_link_libraries(Engine PUBLIC glad)
-    target_link_libraries(Engine PUBLIC dl)
+
+    if (NOT WIN32)
+        target_link_libraries(Engine PUBLIC dl)
+    endif()
 endif()
 
-if (EMSCRIPTEN)
-    message("Building for Web (Emscripten/WebGL 2)")
-    set(CMAKE_EXECUTABLE_SUFFIX ".html")
+# if (EMSCRIPTEN)
+#     message("Building for Web (Emscripten/WebGL 2)")
+#     set(CMAKE_EXECUTABLE_SUFFIX ".html")
 
-    # TODO: change this
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} --preload-file ${ENGINE_PACKAGE_FILES}")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O2 -s USE_WEBGL2=1 -s USE_GLFW=3 -s DISABLE_EXCEPTION_CATCHING=0 -s ALLOW_MEMORY_GROWTH=1")
-endif()
+#     # TODO: change this
+#     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} --preload-file \"${ENGINE_PACKAGE_FILES}\"")
+#     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O0 -s USE_WEBGL2=1 -s USE_GLFW=3 -s DISABLE_EXCEPTION_CATCHING=0 -s ALLOW_MEMORY_GROWTH=1 -s LLD_REPORT_UNDEFINED")
+
+#     set(CMAKE_EXE_LINKER_FLAGS  "${CMAKE_EXE_LINKER_FLAGS} -s LLD_REPORT_UNDEFINED -lglfw")
+# endif()
+
+function(build_emscripten)
+    if (EMSCRIPTEN)
+        message("Building for Web (Emscripten/WebGL 2)")
+        set(CMAKE_EXECUTABLE_SUFFIX ".html")
+
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${ENGINE_PACKAGE_FILES}")
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O0 -s USE_WEBGL2=1 -s USE_GLFW=3 -s DISABLE_EXCEPTION_CATCHING=0 -s ALLOW_MEMORY_GROWTH=1 -s LLD_REPORT_UNDEFINED")
+
+        set(CMAKE_EXE_LINKER_FLAGS  "${CMAKE_EXE_LINKER_FLAGS} -s LLD_REPORT_UNDEFINED -lglfw")
+    endif()
+endfunction(build_emscripten)
+
 
 # Link glfw and gl
-target_link_libraries(Engine PUBLIC GL)
 target_link_libraries(Engine PUBLIC glfw)
+target_link_libraries(Engine PUBLIC GL)
+
+target_link_libraries(Engine PUBLIC ${GLFW_LIBRARIES})
 
 # Add other dependencies
 
