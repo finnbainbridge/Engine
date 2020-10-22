@@ -23,7 +23,7 @@
 #endif
 
 
-#define GLFW_INCLUDE_ES3
+//#define GLFW_INCLUDE_ES3
 #include "GLFW/glfw3.h"
 
 #define NK_INCLUDE_FIXED_TYPES
@@ -83,16 +83,25 @@ bool Amber::createWindow(int width, int height, std::string title)
 
     if (!glfwInit())
     {
-        LOG_ERROR("Failed. Could not start GLFW.");
+        LOG_ASSERT_MESSAGE_FATAL(true, "Failed. Could not start GLFW.");
         return false;
     }
 
+#ifndef EMSCRIPTEN
+    //glfwWindowHint(GLFW_CLIENT_API, GLFW_OPENGL_ES_API);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+    //glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+    glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
+#else
     glfwWindowHint(GLFW_CLIENT_API, GLFW_OPENGL_ES_API);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
+    //glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
     glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
-
+#endif
     // TODO: Fullscreen
     window = glfwCreateWindow(width, height, title.c_str(), NULL, NULL);
 

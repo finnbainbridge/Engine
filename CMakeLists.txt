@@ -38,7 +38,10 @@ if (NOT EMSCRIPTEN)
     add_subdirectory(subprojects/glad)
     
     target_link_libraries(Engine PUBLIC glad)
-    target_link_libraries(Engine PUBLIC dl)
+
+    if (NOT WIN32)
+        target_link_libraries(Engine PUBLIC dl)
+    endif()
 endif()
 
 if (EMSCRIPTEN)
@@ -51,7 +54,13 @@ if (EMSCRIPTEN)
 endif()
 
 # Link glfw and gl
-target_link_libraries(Engine PUBLIC GL)
+if (WIN32)
+    find_package(OpenGL REQUIRED)
+    target_link_libraries(Engine PUBLIC OpenGL::GL)
+else()
+    target_link_libraries(Engine PUBLIC GL)
+endif()
+
 target_link_libraries(Engine PUBLIC glfw)
 
 # Add other dependencies

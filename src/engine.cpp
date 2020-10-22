@@ -170,7 +170,7 @@ std::shared_ptr<Engine::DOM::Element> Engine::Document::loadFromFile(std::string
     std::string text = Engine::Res::ResourceManager::load<Engine::Res::TextResource>(name)->getText();
     
     // Create the document & load the xml
-    XMLDocument doc;
+    tinyxml2::XMLDocument doc;
     doc.Parse(text.c_str());
 
     auto base = doc.FirstChildElement();
