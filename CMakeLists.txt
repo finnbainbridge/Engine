@@ -72,8 +72,15 @@ endfunction(build_emscripten)
 
 
 # Link glfw and gl
+if (WIN32)
+    find_package(OpenGL REQUIRED)
+    target_link_libraries(Engine PUBLIC OpenGL::GL)
+else()
+    target_link_libraries(Engine PUBLIC GL)
+endif()
+
 target_link_libraries(Engine PUBLIC glfw)
-target_link_libraries(Engine PUBLIC GL)
+# target_link_libraries(Engine PUBLIC GL)
 
 target_link_libraries(Engine PUBLIC ${GLFW_LIBRARIES})
 

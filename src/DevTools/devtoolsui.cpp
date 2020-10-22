@@ -106,7 +106,7 @@ void DevTools::render(float delta)
 
 void DevTools::process(float delta)
 {
-    if (document->renderer->isKeyPressed(ENGINE_KEY_F12) && document->renderer->getTime() > cooldown_time)
+    if (document->renderer->isKeyPressed(ENGINE_KEY_BACKSLASH) && document->renderer->getTime() > cooldown_time)
     {
         // setVisible(!getVisible());
         if (getVisible() == false)

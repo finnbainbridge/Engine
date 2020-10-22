@@ -21,17 +21,24 @@ void Engine::Res::ResourceManager::start(int argc, char const* argv[])
 {
     // #ifdef __EMSCRIPTEN__
     std::string exe_path = argv[0];
-    std::string part_1 = std::filesystem::path(exe_path).parent_path();
+    // TODO: Fix
+#ifndef _MSC_VER
+    std::string part_1 = (std::filesystem::path(exe_path).parent_path()).string();
     if (part_1 == "" || part_1 == "." || part_1 == "/")
     {
         directory = "..";
         return;
     }
-    directory = std::filesystem::path(part_1).parent_path();
+    directory = std::filesystem::path(part_1).parent_path().string();
     if (directory == "" || directory == "/")
     {
         directory = ".";
     }
+#else
+    WCHAR path[MAX_PATH];
+    GetModuleFileNameW(NULL, path, MAX_PATH);
+    directory = std::filesystem::path(path).parent_path().parent_path().parent_path().parent_path().string();
+#endif
     // #else
     // std::string exe_path = std::filesystem::current_path();
     // directory = std::filesystem::path(exe_path).parent_path();
