@@ -6,6 +6,7 @@
 #include "Engine/Renderer/Renderer.hpp"
 #include "glm/fwd.hpp"
 #include <glm/glm.hpp>
+#include <memory>
 #include <mutex>
 #include <thread>
 
@@ -90,6 +91,9 @@ namespace Engine
                 virtual void onLoad();
                 virtual void onSave();
 
+                virtual void appendChild(std::shared_ptr<DOM::Element> elem);
+                virtual void onParentAdded();
+
         };
 
 
@@ -118,23 +122,48 @@ namespace Engine
                 virtual void render(float delta);
         };
 
-        struct MeshMaterial
+        class MeshMaterial: public Renderer::UniformObject
         {
-            // Colour of the material (will be overriden by textures)
-            glm::vec3 diffuse;
+            public:
+                // Colour of the material (will be overriden by textures)
+                glm::vec3 diffuse;
 
-            // Ambient colour
-            glm::vec3 ambient;
+                // Ambient colour
+                glm::vec3 ambient;
 
-            // Specular
-            glm::vec3 specular;
+                // Specular
+                glm::vec3 specular;
 
-            // Shininess
-            float shininess;
+                // Shininess
+                float shininess;
 
-            // Tells the renderer if it should light tie inside of the shape as well.
-            // Needed for shapes with holes in them
-            // bool two_sided;
+                // Culling mode
+                Renderer::CullingMode culling_mode = Renderer::CullingMode::Front;
+
+                // Tells the renderer if it should light tie inside of the shape as well.
+                // Needed for shapes with holes in them
+                // bool two_sided;
+
+                virtual void setUniforms(std::shared_ptr<Renderer::ShaderProgram> sp)
+                {
+                    // Setting shader uniforms goes here
+
+                    // TODO: Get this info from lights
+
+                    // Light position in global space
+                    sp->setUniform("light.position", glm::vec4(0, 0, 2, 1));
+
+                    // Diffuse, ambient, and specular, of light
+                    sp->setUniform("light.diffuse", glm::vec3(0.5, 0.5, 0.5));
+                    sp->setUniform("light.ambient", glm::vec3(0.5, 0.5, 0.5));
+                    sp->setUniform("light.specular", glm::vec3(0.5, 0.5, 0.5));
+
+                    // Material stuff
+                    sp->setUniform("material.diffuse", diffuse);
+                    sp->setUniform("material.ambient", ambient);
+                    sp->setUniform("material.specular", specular);
+                    sp->setUniform("material.shininess", shininess);
+                }
         };
 
         /*
@@ -149,7 +178,7 @@ namespace Engine
                 std::shared_ptr<Models::MeshResource> resource;
                 std::shared_ptr<Renderer::ShaderProgram> shaders;
 
-                MeshMaterial material;
+                std::shared_ptr<MeshMaterial> material;
             public:
                 MeshElement3D(std::shared_ptr<Document> doc);
                 virtual void init();
@@ -160,12 +189,12 @@ namespace Engine
                 // Intended for use when building scenes offline
                 void _setResourceDry(std::shared_ptr<Models::MeshResource> res);
 
-                void setMaterial(MeshMaterial mat)
+                void setMaterial(std::shared_ptr<MeshMaterial> mat)
                 {
                     material = mat;
                 };
 
-                MeshMaterial getMaterial() const
+                std::shared_ptr<MeshMaterial> getMaterial() const
                 {
                     return material;
                 };

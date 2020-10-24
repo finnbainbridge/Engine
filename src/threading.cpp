@@ -43,7 +43,7 @@ void Threading::startThreads()
     running = true;
 
     // Thread-up
-    for (size_t i = 0; i < amount; i++)
+    for (auto i = 0; i < amount; i++)
     {
         if (lesser_threads > 0)
         {

@@ -46,8 +46,8 @@ void Element::appendChild(std::shared_ptr<Element> child)
     child->setParent(shared_from_this());
     children.push_back(child);
 
-    // Plan: Have a "self" pointer that gets set when added to a parent
-    // Document will have a "set element" function
+    // Call the event
+    child->onParentAdded();
 }
 
 void Element::removeChild(std::shared_ptr<Element> child)
@@ -63,6 +63,9 @@ void Element::removeChild(std::shared_ptr<Element> child)
     }
     
     child->setParent(nullptr);
+
+    // Call the Evant
+    child->onParentRemoved();
 }
 
 bool Element::hasChild(std::shared_ptr<Element> child)

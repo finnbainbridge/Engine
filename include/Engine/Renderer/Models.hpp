@@ -3,6 +3,7 @@
 
 #include "Engine/Engine.hpp"
 #include "Engine/Log.hpp"
+#include "Engine/Renderer/Renderer.hpp"
 #include "Engine/Res.hpp"
 #include "glm/fwd.hpp"
 #include <cstdlib>
@@ -26,6 +27,9 @@ namespace Engine
             private:
                 std::vector<glm::float32> vertices;
                 std::vector<glm::uint32> indices;
+
+                std::shared_ptr<Renderer::RenderObject> mesh;
+
             public:
                 const glm::uint32 file_format_version = 1;
                 MeshResource()
@@ -53,6 +57,16 @@ namespace Engine
                 void setIndices(std::vector<glm::uint32> arg)
                 {
                     indices = arg;
+                }
+
+                std::shared_ptr<Renderer::RenderObject> getRenderObject() const
+                {
+                    return mesh;
+                }
+
+                void setRenderObject(std::shared_ptr<Renderer::RenderObject> object)
+                {
+                    mesh = object;
                 }
 
                 virtual void loadFile(std::shared_ptr<std::stringstream> data);

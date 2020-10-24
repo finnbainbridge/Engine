@@ -17,7 +17,12 @@ void MeshElement3D::init()
 
     setShaders(shader);
 
-    setMaterial(MeshMaterial {glm::vec3(0.2, 0.8, 0.2), glm::vec3(0.2, 0.2, 0.2), glm::vec3(0.8, 0.8, 0.8), 1});
+    setMaterial(std::shared_ptr<MeshMaterial>(new MeshMaterial));
+    //  {glm::vec3(0.2, 0.8, 0.2), glm::vec3(0.2, 0.2, 0.2), glm::vec3(0.8, 0.8, 0.8), 1}
+    material->diffuse = glm::vec3(0.2, 0.8, 0.2);
+    material->ambient = glm::vec3(0.1, 0.4, 0.1);
+    material->specular = glm::vec3(0.8, 0.8, 0.8);
+    material->shininess = 1;
 }
 
 void MeshElement3D::setShaders(std::shared_ptr<Renderer::ShaderProgram> shaders)
@@ -32,16 +37,24 @@ void MeshElement3D::setShaders(std::shared_ptr<Renderer::ShaderProgram> shaders)
 
 void MeshElement3D::setResource(std::shared_ptr<Models::MeshResource> res)
 {
-    if (has_data == true)
-    {
-        // Kill the old render object
-        render_object->destroy();
-    }
+    // if (has_data == true)
+    // {
+    //     // Kill the old render object
+    //     render_object->destroy();
+    // }
 
     resource = res;
 
-    render_object = document->renderer->addRenderObject();
-    render_object->setMeshData(resource->getVertices(), resource->getIndices());
+    if (resource->getRenderObject() == nullptr)
+    {
+        render_object = document->renderer->addRenderObject();
+        render_object->setMeshData(resource->getVertices(), resource->getIndices());
+        resource->setRenderObject(render_object);
+    }
+    else
+    {
+        render_object = resource->getRenderObject();
+    }
 
     has_data = true;
 }
@@ -61,21 +74,22 @@ void MeshElement3D::render(float delta)
     // TODO: Get this info from lights
 
     // Light position in global space
-    render_object->shader_program->setUniform("light.position", glm::vec4(0, 0, 2, 1));
+    // render_object->shader_program->setUniform("light.position", glm::vec4(0, 0, 2, 1));
 
-    // Diffuse, ambient, and specular, of light
-    render_object->shader_program->setUniform("light.diffuse", glm::vec3(0.5, 0.5, 0.5));
-    render_object->shader_program->setUniform("light.ambient", glm::vec3(0.5, 0.5, 0.5));
-    render_object->shader_program->setUniform("light.specular", glm::vec3(0.5, 0.5, 0.5));
+    // // Diffuse, ambient, and specular, of light
+    // render_object->shader_program->setUniform("light.diffuse", glm::vec3(0.5, 0.5, 0.5));
+    // render_object->shader_program->setUniform("light.ambient", glm::vec3(0.5, 0.5, 0.5));
+    // render_object->shader_program->setUniform("light.specular", glm::vec3(0.5, 0.5, 0.5));
 
-    // Material stuff
-    render_object->shader_program->setUniform("material.diffuse", material.diffuse);
-    render_object->shader_program->setUniform("material.ambient", material.ambient);
-    render_object->shader_program->setUniform("material.specular", material.specular);
-    render_object->shader_program->setUniform("material.shininess", material.shininess);
-    // render_object->shader_program->setUniform("material.two_sided", material.two_sided);
+    // // Material stuff
+    // render_object->shader_program->setUniform("material.diffuse", material.diffuse);
+    // render_object->shader_program->setUniform("material.ambient", material.ambient);
+    // render_object->shader_program->setUniform("material.specular", material.specular);
+    // render_object->shader_program->setUniform("material.shininess", material.shininess);
+    // // render_object->shader_program->setUniform("material.two_sided", material.two_sided);
 
-    document->renderer->renderRenderObject(render_object, global_transform, transform);
+    // document->renderer->renderRenderObject(render_object, global_transform, transform);
+    document->renderer->addToRenderQueue(render_object, material, global_transform, transform, material->culling_mode);
     global_transform_lock.unlock();
     transform_lock.unlock();
 }

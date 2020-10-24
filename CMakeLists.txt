@@ -19,10 +19,18 @@ add_library(Engine STATIC  src/engine.cpp
          src/Element3D/element3d.cpp  
          src/Element3D/meshelement3d.cpp  
          src/Element3D/models.cpp  
-         src/renderer/Amber/amber.cpp )
+         src/renderer/Amber/amber.cpp
+         src/renderer/Amber/amber_resources.cpp)
         
 target_include_directories(Engine PUBLIC include)
 include_directories(include)
+
+# Enable Hell
+# Don't: TOO MANY WARNINGS!
+# target_compile_options(Engine PRIVATE
+#   $<$<CXX_COMPILER_ID:MSVC>:/W3 /WX>
+#   $<$<NOT:$<CXX_COMPILER_ID:MSVC>>:-Wall -pedantic -Werror>
+# )
 
 find_package(Threads REQUIRED)
 target_link_libraries(Engine PUBLIC Threads::Threads)

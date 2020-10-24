@@ -219,6 +219,31 @@ void Element3D::onSave()
     // global_transform_lock.unlock();
 }
 
+void Element3D::appendChild(std::shared_ptr<DOM::Element> elem)
+{
+    if (elem->type_container.isType(document->element_types.getTypeOfElement("element3d")))
+    {
+        callChildUpdate();
+    }
+
+    DOM::Element::appendChild(elem);
+}
+
+void Element3D::onParentAdded()
+{
+    // if (getParent()->type_container.isType(document->element_types.getTypeOfElement("element3d")))
+    // {
+        // callChildUpdate();
+    // }
+    // else
+    // {
+    callChildUpdate();
+    // }
+}
+
+// ====================================================
+// Camera
+
 CameraElement3D::CameraElement3D(std::shared_ptr<Document> document): Element3D::Element3D(document)
 {
     setTagName("camera3d");
@@ -252,7 +277,7 @@ void ManualMeshElement3D::render(float delta)
 {
     global_transform_lock.lock();
     transform_lock.lock();
-    document->renderer->renderRenderObject(render_object, global_transform, transform);
+    // document->renderer->renderRenderObject(render_object, global_transform, transform);
     global_transform_lock.unlock();
     transform_lock.unlock();
 }

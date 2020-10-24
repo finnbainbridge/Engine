@@ -112,7 +112,7 @@ namespace Engine
                     }
                 }
         };
-    };
+    }
 
     namespace Threading
     {
@@ -200,10 +200,16 @@ namespace Engine
             std::vector<std::shared_ptr<Element>> getChildren();
 
             // Add a child to this element. This will remove them from their previous parent
-            void appendChild(std::shared_ptr<Element> child);
+            virtual void appendChild(std::shared_ptr<Element> child);
+
+            // Function called when a new parent is added
+            virtual void onParentAdded() {};
 
             // Remove a child from this element
-            void removeChild(std::shared_ptr<Element> child);
+            virtual void removeChild(std::shared_ptr<Element> child);
+
+            // Function called when a new parent is removed
+            virtual void onParentRemoved() {};
 
             // Checks if a given element is this element's child
             bool hasChild(std::shared_ptr<Element> child);

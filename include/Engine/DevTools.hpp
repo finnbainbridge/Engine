@@ -24,7 +24,7 @@ namespace Engine {
                 float angle_x;
                 float angle_y;
 
-                std::mutex cam_pos_lock;
+                std::mutex cam_lock;
 
                 glm::vec3 cam_pos;
 

@@ -12,7 +12,7 @@ This function is not normally part of nuklear - it comes from https://github.com
 NK_API int nk_tab (struct nk_context *ctx, const char *title, int active, float widget_width)
 {
 	const struct nk_user_font *f = ctx->style.font;
-	float text_width = f->width(f->userdata, f->height, title, nk_strlen(title));
+	// float text_width = f->width(f->userdata, f->height, title, nk_strlen(title));
 	// float widget_width = text_width + 3 * ctx->style.button.padding.x;
 	nk_layout_row_push(ctx, widget_width);
 	struct nk_style_item c = ctx->style.button.normal;
@@ -71,7 +71,7 @@ void DevTools::render(float delta)
 
         std::shared_ptr<Engine::DevTools::DevToolsTab> active_tab = nullptr;
 
-        for (int i = 0; i < tabs.size(); i++)
+        for (auto i = 0; i < tabs.size(); i++)
         {
             auto tab = std::dynamic_pointer_cast<DevToolsTab>(tabs[i]);
             if (nk_tab (NKAPI::ctx, tab->getTabName().c_str(), current_tab == i, (document->renderer->getWidth()-45)/tabs.size())) 
@@ -213,7 +213,7 @@ int DevToolsTree::recursiveTreeRender(std::shared_ptr<DOM::Element> element, int
         }
     }
     id ++;
-    for (int i = 0; i < element->getChildren().size(); i++)
+    for (auto i = 0; i < element->getChildren().size(); i++)
     {
         if (worked)
         {

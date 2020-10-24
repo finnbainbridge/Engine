@@ -54,7 +54,7 @@ namespace Engine {
         class RenderObject
         {
             public:
-                RenderObject(): shader_program(nullptr), global_transform(), local_transform(), vertex_data(), indices() {};
+                RenderObject(): global_transform(), local_transform(), shader_program(nullptr), vertex_data(), indices() {};
                 glm::mat4 global_transform;
                 glm::mat4 local_transform;
 
@@ -111,12 +111,27 @@ namespace Engine {
 
                 virtual void draw() {};
                 virtual void destroy() {};
+                virtual void checkInited() {};
+        };
+
+        // This class kinda represents a material
+        // When an object is rendered, it is called to set the appropriate uniforms
+        // On the ShaderProgram
+        class UniformObject
+        {
+            public:
+                virtual void setUniforms(std::shared_ptr<ShaderProgram> prog) {};
         };
 
         class ICamera
         {
             public:
                 virtual glm::mat4 _getViewMatrix() {return glm::mat4();};
+        };
+
+        enum CullingMode
+        {
+            Front, Back, Both
         };
 
         class IRenderer
@@ -129,9 +144,12 @@ namespace Engine {
                 virtual double getTime() {return 0;}
 
                 virtual std::shared_ptr<ShaderProgram> addShaderProgram(std::shared_ptr<ShaderResource> vert, std::shared_ptr<ShaderResource> frag) {return nullptr;};
+                
+                virtual void drawFrame(float delta) {};
+                // virtual void addToRenderQueue(RenderObject obj, UniformObject uobj, glm::mat4 globa, glm::mat4 local) {};
 
                 virtual std::shared_ptr<RenderObject> addRenderObject() {return nullptr;};
-                virtual void renderRenderObject(std::shared_ptr<RenderObject> model, glm::mat4 global_transform, glm::mat4 local_transform) {};
+                virtual void addToRenderQueue(std::shared_ptr<RenderObject> obj, std::shared_ptr<UniformObject> uobj, glm::mat4 globa, glm::mat4 local, CullingMode cm= CullingMode::Both) {};
 
                 virtual void cleanup() {};
 

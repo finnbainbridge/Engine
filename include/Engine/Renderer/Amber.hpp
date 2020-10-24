@@ -7,9 +7,11 @@
 #include "Engine/Res.hpp"
 #include "GLFW/glfw3.h"
 #include <map>
+#include <mutex>
 #include <string>
 #include "glm/fwd.hpp"
 #include <glm/glm.hpp>
+#include <vector>
 
 
 namespace Engine {
@@ -52,12 +54,26 @@ namespace Engine {
                 glm::uint32 vbo;
                 glm::uint32 ibo;
 
+                bool inited = false;
             public:
                 AmberRenderObject(): vao(0), vbo(0), ibo(0) {};
                 // TODO: Re-add setMeshDataManuel
-                virtual void setMeshData(std::vector<glm::float32> vertices, std::vector<glm::uint32> indiciez);
+                // virtual void setMeshData(std::vector<glm::float32> vertices, std::vector<glm::uint32> indiciez);
                 virtual void draw();
                 virtual void destroy();
+                virtual void checkInited();
+        };
+
+        // This represents a draw instruction
+        // For every object drawn, a PipeItem is added
+        // It contains all the info needed to render that object
+        struct PipeItem
+        {
+            std::shared_ptr<RenderObject> object;
+            std::shared_ptr<UniformObject> material;
+            glm::mat4 global;
+            glm::mat4 local;
+            CullingMode cm;
         };
 
         class Amber: public IRenderer
@@ -81,6 +97,12 @@ namespace Engine {
                 glm::vec2 offset;
                 glm::vec2 old_position;
 
+                std::mutex next_lock;
+                std::vector<PipeItem> current_frame;
+                std::vector<PipeItem> next_frame;
+
+                void renderPipeItem(PipeItem p);
+
             public:
                 Amber(std::shared_ptr<Document> doc);
                 ~Amber();
@@ -98,6 +120,9 @@ namespace Engine {
 
                 virtual std::shared_ptr<RenderObject> addRenderObject();
                 virtual void renderRenderObject(std::shared_ptr<RenderObject> model, glm::mat4 global_transform, glm::mat4 local_transform);
+
+                virtual void addToRenderQueue(std::shared_ptr<RenderObject> obj, std::shared_ptr<UniformObject> uobj, glm::mat4 globa, glm::mat4 local, CullingMode cm= CullingMode::Both);
+                virtual void drawFrame(float delta);
 
                 virtual void destroy();
 

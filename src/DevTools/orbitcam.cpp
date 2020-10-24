@@ -20,14 +20,14 @@ const float aaa[16] = {
 
 OrbitCamera3D::OrbitCamera3D(std::shared_ptr<Document> new_document)
 : E3D::Element3D(new_document),
+target(),
 yaw(0),
 pitch(0),
 radius(10),
-target(),
-cam_pos(),
-cam_pos_lock(),
 angle_x(0),
-angle_y(0)
+angle_y(0),
+cam_lock(),
+cam_pos()
 {
     target = glm::vec3(0,0,0);
     setTagName("orbitcamera3d");
@@ -35,11 +35,14 @@ angle_y(0)
 
 void OrbitCamera3D::init()
 {
+    // Thread lock it because Cameras have potencial to be inited twice at the same time
+    cam_lock.lock();
     // Add the _actual_ camera
     camera = std::make_shared<E3D::CameraElement3D>(document);
     camera->translate(glm::vec3(0,0,10));
     appendChild(camera);
 
+    cam_lock.unlock();
     // glm::vec4 x_axis = getGlobalTransform() * glm::vec4(1, 0, 0, 0);
     // glm::vec4 y_axis = getGlobalTransform() * glm::vec4(0, 1, 0, 0);
 }

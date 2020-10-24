@@ -51,7 +51,7 @@ std::shared_ptr<Engine::Res::IResource> Engine::Res::ResourceManager::getCachedR
     try {
         return cache.at(filename);
     }
-    catch (std::exception sx)
+    catch (std::exception& sx)
     {
         return nullptr;
     }

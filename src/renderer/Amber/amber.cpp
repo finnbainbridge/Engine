@@ -12,6 +12,7 @@
 #include <iostream>
 #include <memory>
 #include <string>
+#include <vector>
 
 #ifdef __EMSCRIPTEN__
 
@@ -132,7 +133,7 @@ bool Amber::createWindow(int width, int height, std::string title)
         return false;
     }
 
-    LOG_SUCCESS("OpenGL ES " + std::to_string(GLVersion.major) + "." + std::to_string(GLVersion.minor) + " on " + (char*)glGetString(GL_VENDOR) + " " + (char*)glGetString(GL_RENDERER));
+    LOG_SUCCESS("OpenGL " + std::to_string(GLVersion.major) + "." + std::to_string(GLVersion.minor) + " on " + (char*)glGetString(GL_VENDOR) + " " + (char*)glGetString(GL_RENDERER));
 #endif
 
 
@@ -141,6 +142,7 @@ bool Amber::createWindow(int width, int height, std::string title)
 
     glViewport(0,0,width,height);
     glEnable(GL_DEPTH_TEST);
+    glEnable(GL_CULL_FACE);
 
     // Create nuklear
     NKAPI::ctx = nk_glfw3_init(&glfw, window, NK_GLFW3_DEFAULT);
@@ -270,6 +272,10 @@ bool Amber::loop()
         old_position = glm::vec2(x,y);
     }
 
+    // Flip the render buffers... kinda
+    current_frame = next_frame;
+    next_frame = std::vector<PipeItem>();
+
     // Run our render function
     render_func(delta);
 
@@ -280,6 +286,7 @@ bool Amber::loop()
     // nk_end(NKAPI::ctx);
     nk_glfw3_render(&glfw, NK_ANTI_ALIASING_ON);
     glEnable(GL_DEPTH_TEST);
+    glEnable(GL_CULL_FACE);
 
     // Swap the buffers so it actually shows up
     glfwSwapBuffers(window);
@@ -499,78 +506,6 @@ std::shared_ptr<ShaderProgram> Amber::addShaderProgram(std::shared_ptr<ShaderRes
     return program;
 }
 
-void AmberRenderObject::setMeshData(std::vector<glm::float32> vertices, std::vector<glm::uint32> indiciez)
-{
-    RenderObject::setMeshData(vertices, indiciez);
-
-    // Make sure we're on the right thread
-    Amber::makeCurrent();
-
-    // Now put the model into OpenGL
-
-    // First, create the buffers
-    glGenVertexArrays(1, &vao);
-    // std::cout << glGetError() << std::endl;
-    glGenBuffers(1, &vbo);
-    // std::cout << glGetError() << std::endl;
-    glGenBuffers(1, &ibo);
-    // std::cout << glGetError() << std::endl;
-
-    // Use the vertex array
-    glBindVertexArray(vao);
-    // std::cout << glGetError() << std::endl;
-
-    // Fill up the buffers
-    glBindBuffer(GL_ARRAY_BUFFER, vbo);
-
-    // Add the vertex data
-    glBufferData(GL_ARRAY_BUFFER, vertex_data.size() * sizeof(glm::float32), &vertex_data[0], GL_STATIC_DRAW);
-
-    // Add the indicies
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo);
-    // std::cout << glGetError() << std::endl;
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(glm::uint32), &indices[0], GL_STATIC_DRAW);
-    // std::cout << glGetError() << std::endl;
-
-    // Now, we tell OpenGL where all the data actually _is_
-
-    // In position 1: Position
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8*sizeof(GL_FLOAT), NULL);
-    glEnableVertexAttribArray(0);
-    // std::cout << glGetError() << std::endl;
-
-    // In position 2: Normals
-    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8*sizeof(GL_FLOAT), (GLvoid*)(3 * sizeof(GL_FLOAT)));
-    glEnableVertexAttribArray(1);
-    // std::cout << glGetError() << std::endl;
-
-    // In position 3: Texture Coordinates
-    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8*sizeof(GL_FLOAT), (GLvoid*)(6 * sizeof(GL_FLOAT)));
-    glEnableVertexAttribArray(2);
-    // std::cout << glGetError() << std::endl;
-
-    // Cleanup
-    glBindVertexArray(0);
-
-}
-
-void AmberRenderObject::draw()
-{
-    // std::cout << glGetError() << std::endl;
-    glBindVertexArray(vao);
-    // std::cout << glGetError() << std::endl;
-    glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_INT, (void*) 0);
-    // std::cout << glGetError() << std::endl;
-    glBindVertexArray(0);
-    // std::cout << glGetError() << std::endl;
-}
-
-void AmberRenderObject::destroy()
-{
-    glDeleteVertexArrays(1, &vao);
-    glDeleteBuffers(1, &vbo);
-    glDeleteBuffers(1, &ibo);
-}
 
 std::shared_ptr<RenderObject> Amber::addRenderObject()
 {
@@ -605,6 +540,47 @@ void Amber::renderRenderObject(std::shared_ptr<RenderObject> model, glm::mat4 gl
     // model->shader_program->setUniform("normal_global", glm::mat3(global_transform));
 
     model->draw();
+}
+
+void Amber::drawFrame(float delta)
+{
+    for (auto i = 0; i < current_frame.size(); i++)
+    {
+        renderPipeItem(current_frame[i]);
+    }
+}
+
+void Amber::renderPipeItem(PipeItem p)
+{
+    p.object->checkInited();
+    p.material->setUniforms(p.object->shader_program);
+
+    // Set correct culling mode
+    // For some strange reason, back faces are front faces, and front faces are back faces
+    // This will probably mess me up later on
+    switch (p.cm)
+    {
+        case (CullingMode::Front):
+            glCullFace(GL_BACK);
+            break;
+        
+        case (CullingMode::Back):
+            glCullFace(GL_FRONT);
+            break;
+        
+        case (CullingMode::Both):
+            glCullFace(GL_FRONT_AND_BACK);
+            break;
+    }
+
+    renderRenderObject(p.object, p.global, p.local);
+}
+
+void Amber::addToRenderQueue(std::shared_ptr<RenderObject> obj, std::shared_ptr<UniformObject> uobj, glm::mat4 globa, glm::mat4 local, CullingMode cm)
+{
+    next_lock.lock();
+    next_frame.push_back(PipeItem {obj, uobj, globa, local, cm});
+    next_lock.unlock();
 }
 
 void Amber::setCamera(std::shared_ptr<ICamera> cam)
@@ -696,4 +672,83 @@ void onFrameBufferSizeChange(GLFWwindow* window, int iwidth, int iheight)
     Amber::screen_width = iwidth;
     Amber::screen_height = iheight;
     glViewport(0,0,iwidth,iheight);
+}
+
+void AmberRenderObject::checkInited()
+{
+    // RenderObject::setMeshData(vertices, indiciez);
+    if (inited)
+    {
+        return;
+    }
+    // Make sure we're on the right thread
+    Amber::makeCurrent();
+
+    // Now put the model into OpenGL
+
+    // First, create the buffers
+    glGenVertexArrays(1, &vao);
+    // std::cout << glGetError() << std::endl;
+    glGenBuffers(1, &vbo);
+    // std::cout << glGetError() << std::endl;
+    glGenBuffers(1, &ibo);
+    // std::cout << glGetError() << std::endl;
+
+    // Use the vertex array
+    glBindVertexArray(vao);
+    // std::cout << glGetError() << std::endl;
+
+    // Fill up the buffers
+    glBindBuffer(GL_ARRAY_BUFFER, vbo);
+
+    // Add the vertex data
+    glBufferData(GL_ARRAY_BUFFER, vertex_data.size() * sizeof(glm::float32), &vertex_data[0], GL_STATIC_DRAW);
+
+    // Add the indicies
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo);
+    // std::cout << glGetError() << std::endl;
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(glm::uint32), &indices[0], GL_STATIC_DRAW);
+    // std::cout << glGetError() << std::endl;
+
+    // Now, we tell OpenGL where all the data actually _is_
+
+    // In position 1: Position
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8*sizeof(GL_FLOAT), NULL);
+    glEnableVertexAttribArray(0);
+    // std::cout << glGetError() << std::endl;
+
+    // In position 2: Normals
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8*sizeof(GL_FLOAT), (GLvoid*)(3 * sizeof(GL_FLOAT)));
+    glEnableVertexAttribArray(1);
+    // std::cout << glGetError() << std::endl;
+
+    // In position 3: Texture Coordinates
+    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8*sizeof(GL_FLOAT), (GLvoid*)(6 * sizeof(GL_FLOAT)));
+    glEnableVertexAttribArray(2);
+    // std::cout << glGetError() << std::endl;
+
+    // Cleanup
+    glBindVertexArray(0);
+
+    // Make sure to never do this again
+    inited = true;
+
+}
+
+void AmberRenderObject::draw()
+{
+    // std::cout << glGetError() << std::endl;
+    glBindVertexArray(vao);
+    // std::cout << glGetError() << std::endl;
+    glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_INT, (void*) 0);
+    // std::cout << glGetError() << std::endl;
+    glBindVertexArray(0);
+    // std::cout << glGetError() << std::endl;
+}
+
+void AmberRenderObject::destroy()
+{
+    glDeleteVertexArrays(1, &vao);
+    glDeleteBuffers(1, &vbo);
+    glDeleteBuffers(1, &ibo);
 }

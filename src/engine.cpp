@@ -189,6 +189,8 @@ void Engine::Document::tick(float delta)
     executeElement(delta, base);
     renderElement(delta, base);
 
+    renderer->drawFrame(delta);
+
     Engine::Threading::waitForCompletion();
 }
 
@@ -205,10 +207,12 @@ void Engine::Document::renderElement(float delta, std::shared_ptr<DOM::Element> 
         return;
     }
 
-    element->render(delta);
+    // element->render(delta);
+    Engine::Threading::addTask(std::bind(&Engine::DOM::Element::render, element, delta));
 
     for (size_t i = 0; i < element->getChildren().size(); i++) {
         renderElement(delta, element->getChildren()[i]);
+        
     }
 }
 
