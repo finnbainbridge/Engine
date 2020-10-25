@@ -15,6 +15,11 @@
 #include "Engine/Input.hpp"
 
 namespace Engine {
+    namespace E3D
+    {
+        class LightElement3D;
+    };
+
     namespace Renderer {
         
         class ShaderResource: public Res::IResource
@@ -120,7 +125,7 @@ namespace Engine {
         class UniformObject
         {
             public:
-                virtual void setUniforms(std::shared_ptr<ShaderProgram> prog) {};
+                virtual void setUniforms(std::shared_ptr<ShaderProgram> prog, std::shared_ptr<RenderObject> re, std::vector<std::shared_ptr<E3D::LightElement3D>> lights, glm::mat4 global_position) {};
         };
 
         class ICamera
@@ -150,6 +155,9 @@ namespace Engine {
 
                 virtual std::shared_ptr<RenderObject> addRenderObject() {return nullptr;};
                 virtual void addToRenderQueue(std::shared_ptr<RenderObject> obj, std::shared_ptr<UniformObject> uobj, glm::mat4 globa, glm::mat4 local, CullingMode cm= CullingMode::Both) {};
+
+                // Adds a light to the scene. Lights will be passed into the material manager
+                virtual void addLight(std::shared_ptr<E3D::LightElement3D> light) {};
 
                 virtual void cleanup() {};
 

@@ -3,10 +3,12 @@
 
 // #include "Engine/Engine.hpp"
 // #include "Engine/DOM.hpp"
+#include "Engine/Element3D.hpp"
 #include "Engine/Renderer/Renderer.hpp"
 #include "Engine/Res.hpp"
 #include "GLFW/glfw3.h"
 #include <map>
+#include <memory>
 #include <mutex>
 #include <string>
 #include "glm/fwd.hpp"
@@ -101,6 +103,10 @@ namespace Engine {
                 std::vector<PipeItem> current_frame;
                 std::vector<PipeItem> next_frame;
 
+                std::mutex next_light_lock;
+                std::vector<std::shared_ptr<E3D::LightElement3D>> current_light_frame;
+                std::vector<std::shared_ptr<E3D::LightElement3D>> next_light_frame;
+
                 void renderPipeItem(PipeItem p);
 
             public:
@@ -119,10 +125,13 @@ namespace Engine {
                 virtual std::shared_ptr<ShaderProgram> addShaderProgram(std::shared_ptr<ShaderResource> vert, std::shared_ptr<ShaderResource> frag);
 
                 virtual std::shared_ptr<RenderObject> addRenderObject();
-                virtual void renderRenderObject(std::shared_ptr<RenderObject> model, glm::mat4 global_transform, glm::mat4 local_transform);
+                virtual void renderRenderObject(std::shared_ptr<RenderObject> model, glm::mat4 trans);
 
                 virtual void addToRenderQueue(std::shared_ptr<RenderObject> obj, std::shared_ptr<UniformObject> uobj, glm::mat4 globa, glm::mat4 local, CullingMode cm= CullingMode::Both);
                 virtual void drawFrame(float delta);
+
+                // Adds a light to the scene. Lights will be passed into the material manager
+                virtual void addLight(std::shared_ptr<E3D::LightElement3D> light);
 
                 virtual void destroy();
 

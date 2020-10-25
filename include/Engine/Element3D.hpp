@@ -2,13 +2,17 @@
 #define ENGINE_ELEMENT3D_H
 
 #include "Engine/Engine.hpp"
+#include "Engine/Log.hpp"
 #include "Engine/Renderer/Models.hpp"
 #include "Engine/Renderer/Renderer.hpp"
 #include "glm/fwd.hpp"
 #include <glm/glm.hpp>
+#include <math.h>
 #include <memory>
 #include <mutex>
+#include <string>
 #include <thread>
+#include <vector>
 
 namespace Engine
 {
@@ -122,6 +126,73 @@ namespace Engine
                 virtual void render(float delta);
         };
 
+        /* The basic light class. All it does is emits light in a given radius */
+        class LightElement3D: public Element3D
+        {
+            private:
+                std::string vectorToString(glm::vec3 vec)
+                {
+                    return std::to_string(vec.x) + "," + std::to_string(vec.y) + "," + std::to_string(vec.z);
+                }
+
+                glm::vec3 stringToVector(std::string vec)
+                {
+                    std::vector<float> tokens;
+                    std::string token;
+                    std::istringstream token_stream(vec);
+                    while (std::getline(token_stream, token, ','))
+                    {
+                        tokens.push_back(std::stof(token));
+                    }
+
+                    if (tokens.size() != 3)
+                    {
+                        LOG_ERROR("Vec3 must contain 3 floats: not this: " + vec);
+                        return glm::vec3(0, 0, 0);
+                    }
+
+                    return glm::vec3(token[0], token[1], token[2]);
+                };
+
+            public:
+                LightElement3D(std::shared_ptr<Document> document): Element3D(document)
+                {
+                    setTagName("light3d");
+                }
+
+                glm::vec3 diffuse = glm::vec3(1, 1, 1);
+                glm::vec3 ambient = glm::vec3(0.5, 0.5, 0.5);
+                glm::vec3 specular = glm::vec3(0.2, 0.2, 0.2);
+                int radius = 5;
+
+                virtual void render(float delta) 
+                {
+                    document->renderer->addLight(std::dynamic_pointer_cast<LightElement3D>(shared_from_this()));
+                };
+
+                virtual void onSave()
+                {
+                    setAttribute("diffuse", vectorToString(diffuse));
+                    setAttribute("ambient", vectorToString(ambient));
+                    setAttribute("specular", vectorToString(specular));
+                    setAttribute("radius", radius);
+                };
+
+                virtual void onLoad()
+                {
+                    diffuse = stringToVector(std::get<std::string>(getAttribute("diffuse")));
+                    ambient = stringToVector(std::get<std::string>(getAttribute("ambient")));
+                    specular = stringToVector(std::get<std::string>(getAttribute("specular")));
+                    radius = std::get<int>(getAttribute("radius"));
+                };
+        };
+
+        enum ShadingMode
+        {
+            Fragment,
+            Vertex
+        };
+
         class MeshMaterial: public Renderer::UniformObject
         {
             public:
@@ -140,23 +211,92 @@ namespace Engine
                 // Culling mode
                 Renderer::CullingMode culling_mode = Renderer::CullingMode::Front;
 
+                // Shading mode:
+                // For most things, per fragment shading produces better results.
+                // But for objects far away, or not very important, per vertex shading is more efficient
+                ShadingMode shading_mode = ShadingMode::Fragment;
+
                 // Tells the renderer if it should light tie inside of the shape as well.
                 // Needed for shapes with holes in them
                 // bool two_sided;
 
-                virtual void setUniforms(std::shared_ptr<Renderer::ShaderProgram> sp)
+                virtual void setUniforms(std::shared_ptr<Renderer::ShaderProgram> sp, std::shared_ptr<Renderer::RenderObject> re, std::vector<std::shared_ptr<LightElement3D>> lights, glm::mat4 global_position)
                 {
                     // Setting shader uniforms goes here
+                    int on_num = 0;
 
-                    // TODO: Get this info from lights
+                    // TODO: Default lights
+                    // TODO: Detect if only half of an object needs to be shaded
 
-                    // Light position in global space
-                    sp->setUniform("light.position", glm::vec4(0, 0, 2, 1));
+                    // Find every light that effects this object
+                    for (int i = 0; i < lights.size(); i++) {
+                        // if (i > lights.size()-1)
+                        // {
+                        //     sp->setUniform("light["+std::to_string(i)+"].position", glm::vec4(0, 0, 2, 1));
 
-                    // Diffuse, ambient, and specular, of light
-                    sp->setUniform("light.diffuse", glm::vec3(0.5, 0.5, 0.5));
-                    sp->setUniform("light.ambient", glm::vec3(0.5, 0.5, 0.5));
-                    sp->setUniform("light.specular", glm::vec3(0.5, 0.5, 0.5));
+                        //     // Diffuse, ambient, and specular, of light
+                        //     sp->setUniform("light["+std::to_string(i)+"].diffuse", glm::vec3(0.5, 0.5, 0.5));
+                        //     sp->setUniform("light["+std::to_string(i)+"].ambient", glm::vec3(0.5, 0.5, 0.5));
+                        //     sp->setUniform("light["+std::to_string(i)+"].specular", glm::vec3(0.5, 0.5, 0.5));
+                        //     sp->setUniform("light["+std::to_string(i)+"].radius", 0);
+
+                        //     // Set existance
+                        //     sp->setUniform("light["+std::to_string(i)+"].exists", 0);
+
+                        //     continue;
+                        // }
+                        
+                        auto lpos = lights[i]->getGlobalTransform() * lights[i]->getTransform() * glm::vec4(0,0,0,1);
+
+                        if (glm::distance(lpos, global_position * glm::vec4(0, 0, 0, 1)) <= lights[i]->radius)
+                        {
+                            // Within radius
+                            sp->setUniform("light["+std::to_string(i)+"].position", lpos);
+
+                            // Diffuse, ambient, and specular, of light
+                            sp->setUniform("light["+std::to_string(i)+"].diffuse", lights[i]->diffuse);
+                            sp->setUniform("light["+std::to_string(i)+"].ambient", lights[i]->ambient);
+                            sp->setUniform("light["+std::to_string(i)+"].specular", lights[i]->specular);
+                            sp->setUniform("light["+std::to_string(i)+"].radius", lights[i]->radius);
+
+                            if (shading_mode == ShadingMode::Fragment)
+                            {
+                                sp->setUniform("shading_mode", 1);
+                                sp->setUniform("light["+std::to_string(i)+"].attenv", 1.0f - glm::distance(global_position * glm::vec4(0, 0, 0, 1), lpos)/lights[i]->radius);
+                            }
+                            else
+                            {
+                                // For vertex shading, we do this per vertex
+                                // Which looks better
+                                // But that's not viable per fragment
+                                sp->setUniform("light["+std::to_string(i)+"].attenv", 0.0f);
+                                sp->setUniform("shading_mode", 0);
+                            }
+
+                            // Set existance
+                            sp->setUniform("light["+std::to_string(i)+"].exists", 1);
+
+                            on_num ++;
+                            if (on_num > 31)
+                            {
+                                break;
+                            }
+                        }
+                    }
+
+                    for (int i = on_num; i < 32; i++)
+                    {
+                        sp->setUniform("light["+std::to_string(i)+"].position", glm::vec4(0, 0, 2, 1));
+
+                        // Diffuse, ambient, and specular, of light
+                        sp->setUniform("light["+std::to_string(i)+"].diffuse", glm::vec3(0.5, 0.5, 0.5));
+                        sp->setUniform("light["+std::to_string(i)+"].ambient", glm::vec3(0.5, 0.5, 0.5));
+                        sp->setUniform("light["+std::to_string(i)+"].specular", glm::vec3(0.5, 0.5, 0.5));
+                        sp->setUniform("light["+std::to_string(i)+"].radius", 0);
+
+                        // Set existance
+                        sp->setUniform("light["+std::to_string(i)+"].exists", 0);
+                    }
 
                     // Material stuff
                     sp->setUniform("material.diffuse", diffuse);

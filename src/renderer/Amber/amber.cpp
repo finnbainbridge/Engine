@@ -1,3 +1,4 @@
+#include "Engine/Element3D.hpp"
 #include "Engine/Engine.hpp"
 // #include "Engine/NKAPI.hpp"
 // #include "Engine/Log.hpp"
@@ -276,6 +277,9 @@ bool Amber::loop()
     current_frame = next_frame;
     next_frame = std::vector<PipeItem>();
 
+    current_light_frame = next_light_frame;
+    next_light_frame = std::vector<std::shared_ptr<E3D::LightElement3D>>();
+
     // Run our render function
     render_func(delta);
 
@@ -514,7 +518,7 @@ std::shared_ptr<RenderObject> Amber::addRenderObject()
     return object;
 }
 
-void Amber::renderRenderObject(std::shared_ptr<RenderObject> model, glm::mat4 global_transform, glm::mat4 local_transform)
+void Amber::renderRenderObject(std::shared_ptr<RenderObject> model, glm::mat4 trans)
 {
     Amber::makeCurrent();
     model->shader_program->use();
@@ -526,7 +530,6 @@ void Amber::renderRenderObject(std::shared_ptr<RenderObject> model, glm::mat4 gl
 
     // Set uniforms
     // TODO: Do this in a more scalable way
-    glm::mat4 trans = global_transform * local_transform;
     glm::mat4 mv = camera->_getViewMatrix() * trans;
     model->shader_program->setUniform("projection", glm::perspective((float)0.8726646, (float)screen_width/screen_height, 0.1f, 100.0f));
     model->shader_program->setUniform("view", camera->_getViewMatrix());
@@ -552,8 +555,9 @@ void Amber::drawFrame(float delta)
 
 void Amber::renderPipeItem(PipeItem p)
 {
+    glm::mat4 trans = p.global * p.local;
     p.object->checkInited();
-    p.material->setUniforms(p.object->shader_program);
+    p.material->setUniforms(p.object->shader_program, p.object, current_light_frame, trans);
 
     // Set correct culling mode
     // For some strange reason, back faces are front faces, and front faces are back faces
@@ -573,7 +577,7 @@ void Amber::renderPipeItem(PipeItem p)
             break;
     }
 
-    renderRenderObject(p.object, p.global, p.local);
+    renderRenderObject(p.object, trans);
 }
 
 void Amber::addToRenderQueue(std::shared_ptr<RenderObject> obj, std::shared_ptr<UniformObject> uobj, glm::mat4 globa, glm::mat4 local, CullingMode cm)
@@ -581,6 +585,13 @@ void Amber::addToRenderQueue(std::shared_ptr<RenderObject> obj, std::shared_ptr<
     next_lock.lock();
     next_frame.push_back(PipeItem {obj, uobj, globa, local, cm});
     next_lock.unlock();
+}
+
+void Amber::addLight(std::shared_ptr<E3D::LightElement3D> light)
+{
+    next_light_lock.lock();
+    next_light_frame.push_back(light);
+    next_light_lock.unlock();
 }
 
 void Amber::setCamera(std::shared_ptr<ICamera> cam)

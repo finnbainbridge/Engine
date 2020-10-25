@@ -290,4 +290,5 @@ void E3DExtension::start(std::shared_ptr<Document> doc)
     doc->addElement("camera3d", std::make_shared<DOM::ElementClassFactory<CameraElement3D>>());
     doc->addElement("manualmesh3d", std::make_shared<DOM::ElementClassFactory<ManualMeshElement3D>>());
     doc->addElement("mesh3d", std::make_shared<DOM::ElementClassFactory<MeshElement3D>>());
+    doc->addElement("light", std::make_shared<DOM::ElementClassFactory<LightElement3D>>());
 }
