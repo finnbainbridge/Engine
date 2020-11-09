@@ -88,9 +88,12 @@ namespace Engine {
                 static std::shared_ptr<res_t> load(std::string filename, bool _decompress = false, FileType file_type = FileType::text, bool force_new = false)
                 {
                     LOG_ASSERT_MESSAGE_FATAL(filename == "", "Filename must exist");
-                    std::shared_ptr<res_t> ptr = std::dynamic_pointer_cast<res_t>(getCachedRes(filename));
+                    // LOG_INFO("Checking cache");
+                    auto pt = getCachedRes(filename);
+                    std::shared_ptr<res_t> ptr;
+                    // LOG_INFO("Checked cache");
 
-                    if (force_new || ptr == nullptr)
+                    if (force_new || pt == nullptr)
                     {
                         LOG_INFO("Loading file: " + getDirname() + "/" + filename);
                         ptr = std::make_shared<res_t>();
@@ -130,6 +133,10 @@ namespace Engine {
                         setCachedRes(filename, ptr);
 
                         delete memblock;
+                    }
+                    else
+                    {
+                        ptr = std::dynamic_pointer_cast<res_t>(pt);
                     }
 
                     LOG_ASSERT_MESSAGE_FATAL(ptr == nullptr, "Resource loading failed both badly, and inexplicably");

@@ -47,7 +47,7 @@ void Engine::Res::ResourceManager::start(int argc, char const* argv[])
 
 std::shared_ptr<Engine::Res::IResource> Engine::Res::ResourceManager::getCachedRes(std::string filename)
 {
-    std::shared_ptr<IResource> ptr;
+    // std::shared_ptr<IResource> ptr;
     try {
         return cache.at(filename);
     }

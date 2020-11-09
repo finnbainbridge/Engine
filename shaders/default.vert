@@ -37,8 +37,7 @@ uniform struct LightInfo
 {
     vec4 position;
     vec3 ambient;
-    vec3 diffuse;
-    vec3 specular;
+    vec3 intensity;
     int radius;
     int exists;
     float attenv;
@@ -55,24 +54,43 @@ uniform struct MaterialInfo
     float shininess;
 } material;
 
-vec3 phongModel(int l, vec4 cam_coords, vec3 n)
+// vec3 phongModel(int l, vec4 cam_coords, vec3 n)
+// {
+//     vec3 s = normalize(vec3((view * light[l].position) - cam_coords));
+//     vec3 ambient = light[l].ambient * material.ambient;
+//     float sDotN = max( dot(s, n), 0.0);
+//     vec3 diffuse = light[l].diffuse * material.diffuse * sDotN;
+//     vec3 spec = vec3(0.0);
+
+//     if (sDotN > 0.0)
+//     {
+//         vec3 v = normalize(-cam_coords.xyz);
+//         vec3 r = reflect(-s, n);
+//         spec = light[l].specular * material.specular * 
+//                     pow(max(dot(r, v), 0.0), material.shininess);
+//     }
+
+//     // Calculate intensity with diffuse equation
+//     return ambient + diffuse + spec;
+// }
+
+vec3 blinnPhong(int l, vec4 cam_coords, vec3 n)
 {
-    vec3 s = normalize(vec3((view * light[l].position) - cam_coords));
     vec3 ambient = light[l].ambient * material.ambient;
+    vec3 s = normalize(light[l].position.xyz - cam_coords.xyz);
+
     float sDotN = max( dot(s, n), 0.0);
-    vec3 diffuse = light[l].diffuse * material.diffuse * sDotN;
+    vec3 diffuse = material.diffuse * sDotN;
     vec3 spec = vec3(0.0);
 
     if (sDotN > 0.0)
     {
         vec3 v = normalize(-cam_coords.xyz);
-        vec3 r = reflect(-s, n);
-        spec = light[l].specular * material.specular * 
-                    pow(max(dot(r, v), 0.0), material.shininess);
+        vec3 h = normalize(v + s);
+        spec = material.specular * pow(max(dot(h,n), 0.0), material.shininess);
     }
 
-    // Calculate intensity with diffuse equation
-    return ambient + diffuse + spec;
+    return ambient + (light[l].intensity) * (diffuse + spec);
 }
 
 void main()
@@ -92,8 +110,8 @@ void main()
             if (light[i].exists == 1)
             {
                 float attenv = 1.0 - distance(transform * vec4(0, 0, 0, 1), light[i].position)/float(light[i].radius);
-                front_color += phongModel(i, cam_coords, n) * attenv;
-                back_color += phongModel(i, cam_coords, -n) * attenv;
+                front_color += blinnPhong(i, cam_coords, n) * attenv;
+                back_color += blinnPhong(i, cam_coords, -n) * attenv;
                 happened = 1;
             }
         }

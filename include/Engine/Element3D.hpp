@@ -160,9 +160,10 @@ namespace Engine
                     setTagName("light3d");
                 }
 
-                glm::vec3 diffuse = glm::vec3(1, 1, 1);
+                // glm::vec3 diffuse = glm::vec3(1, 1, 1);
                 glm::vec3 ambient = glm::vec3(0.5, 0.5, 0.5);
-                glm::vec3 specular = glm::vec3(0.2, 0.2, 0.2);
+                // glm::vec3 specular = glm::vec3(0.2, 0.2, 0.2);
+                glm::vec3 intensity = glm::vec3(0.5, 0.5, 0.5);
                 int radius = 5;
 
                 virtual void render(float delta) 
@@ -172,17 +173,19 @@ namespace Engine
 
                 virtual void onSave()
                 {
-                    setAttribute("diffuse", vectorToString(diffuse));
+                    // setAttribute("diffuse", vectorToString(diffuse));
                     setAttribute("ambient", vectorToString(ambient));
-                    setAttribute("specular", vectorToString(specular));
+                    setAttribute("intensity", vectorToString(intensity));
+                    // setAttribute("specular", vectorToString(specular));
                     setAttribute("radius", radius);
                 };
 
                 virtual void onLoad()
                 {
-                    diffuse = stringToVector(std::get<std::string>(getAttribute("diffuse")));
+                    // diffuse = stringToVector(std::get<std::string>(getAttribute("diffuse")));
                     ambient = stringToVector(std::get<std::string>(getAttribute("ambient")));
-                    specular = stringToVector(std::get<std::string>(getAttribute("specular")));
+                    // specular = stringToVector(std::get<std::string>(getAttribute("specular")));
+                    intensity = stringToVector(std::get<std::string>(getAttribute("intensity")));
                     radius = std::get<int>(getAttribute("radius"));
                 };
         };
@@ -254,9 +257,10 @@ namespace Engine
                             sp->setUniform("light["+std::to_string(i)+"].position", lpos);
 
                             // Diffuse, ambient, and specular, of light
-                            sp->setUniform("light["+std::to_string(i)+"].diffuse", lights[i]->diffuse);
+                            // sp->setUniform("light["+std::to_string(i)+"].diffuse", lights[i]->diffuse);
                             sp->setUniform("light["+std::to_string(i)+"].ambient", lights[i]->ambient);
-                            sp->setUniform("light["+std::to_string(i)+"].specular", lights[i]->specular);
+                            // sp->setUniform("light["+std::to_string(i)+"].specular", lights[i]->specular);
+                            sp->setUniform("light["+std::to_string(i)+"].intensity", lights[i]->intensity);
                             sp->setUniform("light["+std::to_string(i)+"].radius", lights[i]->radius);
 
                             if (shading_mode == ShadingMode::Fragment)
