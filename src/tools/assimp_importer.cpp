@@ -4,10 +4,11 @@
 #include "Engine/Renderer/Models.hpp"
 #include "Engine/Res.hpp"
 #include "Engine/Tools/AssimpImporter.hpp"
-#include "assimp/matrix4x4.h"
+#include "glm/ext/matrix_transform.hpp"
 #include "glm/fwd.hpp"
 #include "glm/gtc/type_ptr.hpp"
 
+#include <assimp/matrix4x4.h>
 #include <assimp/Importer.hpp>      // C++ importer interface
 #include <assimp/scene.h>           // Output data structure
 #include <assimp/postprocess.h>     // Post processing flags
@@ -117,15 +118,39 @@ std::shared_ptr<Engine::E3D::Element3D> convert_node(const aiScene* scene, aiNod
         element = std::make_shared<Engine::E3D::Element3D>(document);
     }
 
-    float arr[] = {
-        node->mTransformation.a1, node->mTransformation.a2, node->mTransformation.a3, node->mTransformation.a4,
-        node->mTransformation.b1, node->mTransformation.b2, node->mTransformation.b3, node->mTransformation.b4,
-        node->mTransformation.c1, node->mTransformation.c2, node->mTransformation.c3, node->mTransformation.c4,
-        node->mTransformation.d1, node->mTransformation.d2, node->mTransformation.d3, node->mTransformation.d4
+    // float arr[] = {
+    //     node->mTransformation.a1, node->mTransformation.a2, node->mTransformation.a3, node->mTransformation.a4,
+    //     node->mTransformation.b1, node->mTransformation.b2, node->mTransformation.b3, node->mTransformation.b4,
+    //     node->mTransformation.c1, node->mTransformation.c2, node->mTransformation.c3, node->mTransformation.c4,
+    //     node->mTransformation.d1, node->mTransformation.d2, node->mTransformation.d3, node->mTransformation.d4
+    // };
+
+    aiVector3t scaling(0.0f);
+    aiVector3t rot_axis(0.0f);
+    aiVector3t position(0.0f);
+    float rot_angle;
+
+    node->mTransformation.Decompose(scaling, rot_axis, rot_angle, position);
+
+    float aaa[16] = {
+        1, 0, 0, 0,
+        0, 1, 0, 0,
+        0, 0, 1, 0,
+        0, 0, 0, 1
     };
 
     // Add transform
-    glm::mat4 transform = glm::make_mat4(arr);
+    glm::mat4 transform = glm::make_mat4(aaa);
+    transform = glm::translate(transform, glm::vec3(position.x, position.y, position.z));
+
+    // Predictably, rotating around an axis that doesn't exist causes major problems
+    if (!(rot_axis.x == 0 && rot_axis.y == 0 && rot_axis.z == 0))
+    {
+        transform = glm::rotate(transform, rot_angle, glm::vec3(rot_axis.x, rot_axis.y, rot_axis.z));
+    }
+    
+    transform = glm::scale(transform, glm::vec3(scaling.x, scaling.y, scaling.z));
+
     element->setTransform(transform);
 
     // Now do the same to the children

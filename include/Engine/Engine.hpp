@@ -197,7 +197,7 @@ namespace Engine
             std::vector<std::shared_ptr<Element>> getElementsByClassName(std::string clas);
 
             // Returns this element's children
-            std::vector<std::shared_ptr<Element>> getChildren();
+            std::vector<std::shared_ptr<Element>> getChildren() const;
 
             // Add a child to this element. This will remove them from their previous parent
             virtual void appendChild(std::shared_ptr<Element> child);

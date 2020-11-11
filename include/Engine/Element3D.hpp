@@ -211,6 +211,11 @@ namespace Engine
                 // Shininess
                 float shininess;
 
+                // PBR ones
+                float rough = 0.01;
+                bool metal = false;
+                glm::vec3 color = glm::vec3(0, 1.0, 0);
+
                 // Culling mode
                 Renderer::CullingMode culling_mode = Renderer::CullingMode::Front;
 
@@ -307,6 +312,11 @@ namespace Engine
                     sp->setUniform("material.ambient", ambient);
                     sp->setUniform("material.specular", specular);
                     sp->setUniform("material.shininess", shininess);
+
+                    // PBR Material stuff
+                    sp->setUniform("material.rough", rough);
+                    sp->setUniform("material.metal", metal ? 1 : 0);
+                    sp->setUniform("material.color", color);
                 }
         };
 

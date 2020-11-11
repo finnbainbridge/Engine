@@ -13,7 +13,7 @@ MeshElement3D::MeshElement3D(std::shared_ptr<Document> doc): Element3D(doc)
 void MeshElement3D::init()
 {
     auto shader = document->renderer->addShaderProgram(Engine::Res::ResourceManager::load<Engine::Renderer::ShaderResource>("shaders/default.vert"),
-                Engine::Res::ResourceManager::load<Engine::Renderer::ShaderResource>("shaders/default.frag"));
+                Engine::Res::ResourceManager::load<Engine::Renderer::ShaderResource>("shaders/pbr.frag"));
 
     setShaders(shader);
 

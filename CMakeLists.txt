@@ -9,6 +9,10 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(CMAKE_CXX_FLAGS_DEBUG "-g")
 set(CMAKE_CXX_FLAGS_RELEASE "-O2")
 
+# SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pg")
+# SET(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -pg")
+# SET(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -pg")
+
 add_library(Engine STATIC  src/engine.cpp   
          src/res.cpp  
          src/threading.cpp  
@@ -114,3 +118,13 @@ target_link_libraries(Engine PUBLIC termcolors)
 add_subdirectory(subprojects/tinyxml2_lib)
 target_link_libraries(Engine PUBLIC tinyxml2)
 
+# =============================================
+# Build EngineTool
+
+if (ENGINE_BUILD_TOOL)
+    add_executable(EngineTool src/tools/main.cpp src/tools/assimp_importer.cpp)
+    target_link_libraries(EngineTool PUBLIC Engine)
+
+    add_subdirectory(subprojects/assimp)
+    target_link_libraries(EngineTool PUBLIC assimp)
+endif()

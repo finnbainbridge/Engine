@@ -52,6 +52,10 @@ uniform struct MaterialInfo
     vec3 diffuse;
     vec3 specular;
     float shininess;
+
+    float rough;
+    int metal;
+    vec3 color;
 } material;
 
 // vec3 phongModel(int l, vec4 cam_coords, vec3 n)

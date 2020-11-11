@@ -21,6 +21,8 @@ namespace Engine {
     namespace Renderer {
 
         enum AmberShaderType {program, shader};
+
+        
         class AmberShaderProgram: public ShaderProgram
         {
             private:

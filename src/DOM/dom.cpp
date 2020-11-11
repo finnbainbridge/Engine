@@ -81,7 +81,7 @@ bool Element::hasChild(std::shared_ptr<Element> child)
     }
 }
 
-std::vector<std::shared_ptr<Element>> Element::getChildren()
+std::vector<std::shared_ptr<Element>> Element::getChildren() const
 {
     return children;
 }

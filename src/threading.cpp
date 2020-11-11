@@ -1,5 +1,5 @@
 #include "Engine/Engine.hpp"
-// #define ENGINE_NO_THREADING
+#define ENGINE_NO_THREADING
 #ifdef __EMSCRIPTEN__
 #define ENGINE_NO_THREADING
 #endif

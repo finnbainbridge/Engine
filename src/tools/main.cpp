@@ -8,6 +8,9 @@ int main(int argc, char const *argv[])
     // Start Engine
     Engine::Res::ResourceManager::start(argc, argv);
 
+    assimp_import("../../assets/backpack.glb");
+    return 0;
+
     std::string command;
     // Get argv
     if (argc < 2)
@@ -35,6 +38,7 @@ int main(int argc, char const *argv[])
         std::cout << "Engine tools:" << std::endl;
         std::cout << "Commands: " << std::endl;
         std::cout << "\thelp - Show this message" << std::endl;
+        std::cout << "\timport <filename> - Convert the given 3D model into Engine's format" << std::endl;
     }
     else if (command == "import")
     {

@@ -203,6 +203,8 @@ void Amber::mainloop(std::function<void(float)> func)
     glfwTerminate();
 }
 
+int last_time = 1;
+int frames = 1;
 bool Amber::loop()
 {
     // Make sure the context is on the right thread
@@ -210,6 +212,33 @@ bool Amber::loop()
 
     float delta = glfwGetTime() - last_frame_start;
     last_frame_start = glfwGetTime();
+
+    // Framerate counter
+    static double previousSeconds = 0.0;
+    static int frameCount = 0;
+    double elapsedSeconds;
+    double currentSeconds = glfwGetTime(); // Time since start (s)
+
+    elapsedSeconds = currentSeconds - previousSeconds;
+
+    // Limit text update to 4/second
+    if (elapsedSeconds > 0.25) {
+        previousSeconds = currentSeconds;
+        double fps = (double)frameCount / elapsedSeconds;
+        double msPerFrame = 1000.0 / fps;
+
+        std::ostringstream outs;
+        outs.precision(3); // Set precision of numbers
+
+        outs << std::fixed << "EngineTest" << " - " << "FPS: " << fps << " Frame time: " << msPerFrame << "ms";
+
+        glfwSetWindowTitle(window, outs.str().c_str());
+
+        // Reset frame count
+        frameCount = 0;
+    }
+
+    frameCount ++;
 
     // Check for keypresses
     glfwPollEvents();
@@ -420,6 +449,7 @@ GLint AmberShaderProgram::getUniformLocation(const std::string name)
     }
 
     return uniform_locations[name];
+    // return glGetUniformLocation(handle, name.c_str());
 }
 
 void AmberShaderProgram::setUniform(const std::string name, const glm::vec2& v)
